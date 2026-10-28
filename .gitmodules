@@ -1,0 +1,24 @@
+[submodule "BlueMap"]
+	path = BlueMap
+	url = ../BlueMap.git
+	branch = main
+[submodule "gtnh-exporter"]
+	path = gtnh-exporter
+	url = ../gtnh-exporter.git
+	branch = main
+[submodule "modernity"]
+	path = modernity
+	url = ../modernity.git
+	branch = main
+[submodule "harness"]
+	path = harness
+	url = ../harness.git
+	branch = main
+[submodule "orchestrator"]
+	path = orchestrator
+	url = ../orchestrator.git
+	branch = main
+[submodule "e2e"]
+	path = e2e
+	url = ../e2e.git
+	branch = main
