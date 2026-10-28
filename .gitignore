@@ -1,0 +1,17 @@
+# Local workspace state shared by the submodules (never committed)
+/servers/
+/clients/
+/downloads/
+/out/
+/worlds/
+/sources/
+
+# OS and editor junk
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
