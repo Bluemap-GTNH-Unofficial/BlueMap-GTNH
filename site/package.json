@@ -1,0 +1,19 @@
+{
+  "name": "bluemap-gtnh-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview --port 4173",
+    "demo": "node scripts/build-demo.ts",
+    "check": "node scripts/check-site.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "mermaid": "^11.17.2",
+    "playwright": "1.64.1",
+    "vitepress": "1.6.4",
+    "vitepress-plugin-mermaid": "2.0.17"
+  }
+}

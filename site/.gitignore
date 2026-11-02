@@ -1,0 +1,6 @@
+node_modules/
+.vitepress/cache/
+.vitepress/dist/
+# generated locally by `pnpm demo`; they contain Minecraft and mod textures and are never committed
+public/demo/
+public/generated/

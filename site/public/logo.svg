@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BlueMap GTNH">
+  <!-- an isometric block: map-blue top, GregTech-steel sides -->
+  <polygon points="32,4 58,18 32,32 6,18" fill="#3d8bff"/>
+  <polygon points="6,18 32,32 32,60 6,46" fill="#5b6b7f"/>
+  <polygon points="58,18 32,32 32,60 58,46" fill="#3c4757"/>
+  <polygon points="32,10 46,18 32,26 18,18" fill="#9cc8ff" opacity="0.55"/>
+  <path d="M12 28 L26 35 M12 36 L26 43 M38 35 L52 28 M38 43 L52 36" stroke="#f0a020" stroke-width="2.5"
+        stroke-linecap="round"/>
+</svg>
