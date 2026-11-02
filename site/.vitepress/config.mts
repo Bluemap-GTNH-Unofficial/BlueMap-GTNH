@@ -26,9 +26,11 @@ const ROOT_FILES: Record<string, string> = {
   "README.md": `${umbrella}/blob/main/README.md`,
 };
 
-const guide: DefaultTheme.SidebarItem[] = [
+// One sidebar for every page, so the groups and their order never change while navigating.
+const sidebar: DefaultTheme.SidebarItem[] = [
   {
     text: "Guide",
+    collapsed: false,
     items: [
       { text: "Requirements", link: "/guide/" },
       { text: "Install the server mod", link: "/guide/install" },
@@ -41,31 +43,22 @@ const guide: DefaultTheme.SidebarItem[] = [
   },
   {
     text: "Project",
+    collapsed: false,
     items: [
+      { text: "Demo", link: "/showcase" },
       { text: "Status", link: "/status" },
       { text: "Architecture", link: "/architecture" },
-      { text: "Demo", link: "/showcase" },
       { text: "Credits & licence", link: "/credits" },
     ],
   },
-];
-
-const development: DefaultTheme.SidebarItem[] = [
   {
     text: "Development",
+    collapsed: false,
     items: [
       { text: "Workspace & toolchain", link: "/development/" },
       { text: "Building", link: "/development/building" },
       { text: "Tests & scenes", link: "/development/testing" },
       { text: "Client oracle", link: "/development/oracle" },
-    ],
-  },
-  {
-    text: "Project",
-    items: [
-      { text: "Architecture", link: "/architecture" },
-      { text: "Status", link: "/status" },
-      { text: "Credits & licence", link: "/credits" },
     ],
   },
 ];
@@ -156,14 +149,7 @@ export default withMermaid(
     },
     themeConfig: {
       logo: "/logo.svg",
-      sidebar: {
-        "/guide/": guide,
-        "/status": guide,
-        "/showcase": guide,
-        "/credits": guide,
-        "/architecture": development,
-        "/development/": development,
-      },
+      sidebar,
       search: {
         provider: "local",
         options: {
