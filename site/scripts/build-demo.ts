@@ -581,6 +581,22 @@ const SETTLED = `(mapId) => {
   return [map.hiresTileManager, ...map.lowresTileManager].every((m) => !m.unloaded && m.currentlyLoading === 0);
 }`;
 
+// MapHeightControls eases the target and camera heights towards the terrain under them over many frames and snaps to
+// it once within 0.001; under software WebGL that takes longer than a fixed wait, and reading the target height early
+// misaims the camera (it was still coming down from the previous view).
+const HEIGHTS_SETTLED = `() => {
+  const viewer = window.bluemap?.mapViewer;
+  const manager = viewer?.controlsManager;
+  const heights = manager?.controls?.mapHeight;
+  if (!heights || !viewer.map) return true; // free-flight controls, or no map yet
+  if (manager.ortho !== 0 && manager.angle !== 0) return true; // MapControls only update the heights otherwise
+  const target = viewer.map.terrainHeightAt(manager.position.x, manager.position.z) + 3 || 0;
+  if (heights.targetHeight !== target) return false;
+  if (heights.minCameraHeight === 0) return true; // the camera height is not used at this distance
+  const camera = manager.camera.position;
+  return heights.cameraHeight === (viewer.map.terrainHeightAt(camera.x, camera.z) || 0);
+}`;
+
 // ---- aiming (the webapp's ControlsManager, MapControls and MapHeightControls) ----
 
 type Vec = [number, number, number];
@@ -692,8 +708,9 @@ interface Comparison {
 async function settle(page: Page, map: string): Promise<void> {
   const ready = `(${SETTLED})(${JSON.stringify(map)})`;
   await page.waitForFunction(ready, undefined, { timeout: 180_000, polling: 250 });
-  // let the height controls and the last tiles settle, then a few more frames
+  // let the last tiles draw, wait for the height controls to reach the terrain under the target, then check the tiles
   await page.waitForTimeout(2500);
+  await page.waitForFunction(`(${HEIGHTS_SETTLED})()`, undefined, { timeout: 180_000, polling: 250 });
   await page.waitForFunction(ready, undefined, { timeout: 60_000 });
 }
 
@@ -804,7 +821,7 @@ async function gallery(maps: DemoMap[]): Promise<void> {
         // both shots must come from the same camera, or the slider does not line up; Modernity's models may differ a
         // little where the height controls look, a fraction of a block moves the view by about a pixel
         const y = await targetY(page);
-        if (!(Math.abs(y - (settled.get(modernity.file) ?? NaN)) <= 1)) {
+        if (!(Math.abs(y - (settled.get(modernity.file) ?? NaN)) <= 0.5)) {
           problems.push(`compare ${key}: camera target y ${y}, ${settled.get(modernity.file)} on the Modernity map`);
         }
         const file = `endgame-${key}-default.jpg`;
