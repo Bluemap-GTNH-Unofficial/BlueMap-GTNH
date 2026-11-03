@@ -157,8 +157,15 @@ The world reader and the renderers do not link any mod. They read world files an
   vanilla client jar from Mojang on the server only after the operator sets `accept-download: true`, which means
   accepting the [Minecraft EULA](https://www.minecraft.net/eula).
 - Mod names, block names and textures belong to their respective authors and are under those mods' own licences.
-- **Release assets never include an exported resource pack.** The exporter builds the pack on the user's own machine
-  from the user's own copy of the pack, because the result contains other authors' textures.
+- **Ready-made resource packs.** For convenience, releases attach two exported resource packs: the base pack
+  `bluemap-gtnh-resources-2.9.0.zip` (GT New Horizons 2.9.0, for plain 2.9.0 servers) and the addon pack
+  `bluemap-gtnh-resources-2.9.0-addons.zip` (2.9.0 plus the five supported community addons, for servers running
+  them). They contain textures from Minecraft (Mojang), the GT New Horizons mods and (in the addon pack) those addons,
+  which belong to their authors and stay under their licences. They are offered free of charge for non-commercial use
+  only. Rights holders who want them removed can
+  [open a takedown issue](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/issues/new?template=takedown.yml),
+  and they will be removed promptly. Users whose modlist differs should export their own pack, which the exporter
+  builds on their own machine from their own copy of the pack.
 - [Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH) is licensed CC BY-NC-SA 4.0. Its files are never
   committed here. The `modernity` tool only converts a release the user downloaded, and the packs it writes carry a
   licence notice: non-commercial use only, share alike.

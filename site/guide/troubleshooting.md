@@ -15,9 +15,12 @@ starts through lwjgl3ify (`@java9args.txt -jar lwjgl3ify-forgePatches.jar nogui`
 
 That is BlueMap's missing-texture cube. Either the exported pack is missing, or it does not match the pack:
 
-- Check that the pack of your server's version (`bluemap-gtnh-resources-2.9.0.zip` on 2.9.0) is in
-  `config/bluemap/packs/` and run `/bluemap reload`, then `/bluemap force-update` for the affected area.
-- Export from a client with the same pack version and the same addons as the server.
+- Check that a pack of your server's version and modlist is in `config/bluemap/packs/` (on 2.9.0 the ready base pack
+  `bluemap-gtnh-resources-2.9.0.zip` for a plain server, the ready addon pack `bluemap-gtnh-resources-2.9.0-addons.zip`
+  with the five supported addons, or your own export) and run `/bluemap reload`, then `/bluemap force-update` for the
+  affected area.
+- If your modlist is neither plain 2.9.0 nor 2.9.0 with the five supported addons, export from a client with the same
+  pack version and the same addons as the server.
 - 1,476 of the 61,468 block states of 2.9.0 cannot be exported at all; unless a dedicated renderer draws them, they
   always show as missing-texture cubes. `export-report.json` lists them; see [known gaps](/status#known-gaps).
 

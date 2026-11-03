@@ -16,8 +16,13 @@ A port of [BlueMap](https://bluemap.bluecolored.de/), the 3D web map for Minecra
 **GT New Horizons 2.9.0** modpack. It runs as a Forge server mod inside the GTNH server,
 reads the 1.7.10 world files (including EndlessIDs' extended block IDs and 16-bit metadata), and renders vanilla
 terrain, GregTech machines, pipes and ores, and blocks from the pack's other mods into BlueMap's browser map. Modded
-blocks look right only with a resource pack that you export yourself from a GTNH client of the same pack version with
-the bundled exporter; this project never distributes that pack, because it contains other authors' textures.
+blocks look right only with a resource pack exported from a GTNH client of the same pack version and modlist with the
+bundled exporter. For convenience, two ready packs for 2.9.0 are attached to the releases: the base pack
+(`bluemap-gtnh-resources-2.9.0.zip`) for plain GTNH 2.9.0 servers and the addon pack
+(`bluemap-gtnh-resources-2.9.0-addons.zip`) for servers running the five supported community addons. Their textures
+belong to their authors; they are offered for non-commercial use only and are removed on request
+([takedown](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/issues/new?template=takedown.yml)). If your
+modlist differs, export your own pack.
 
 Rendering is checked against the **real GTNH client** (the e2e repository's oracle): on 2.9.0, 78.5% of 61,513 judged
 block states and 77.4% of 18,437 judged block faces in seven test scene worlds match the client within thresholds
@@ -49,8 +54,8 @@ Quick links (readable on GitHub too):
   [Architecture](site/architecture.md)
 - [Development: workspace & toolchain](site/development/index.md) · [Building](site/development/building.md) ·
   [Tests & scenes](site/development/testing.md) · [Client oracle](site/development/oracle.md)
-- [Releases](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/releases) (`v5.29-gtnh.1`: BlueMap 5.29 plus
-  the port) · [Third-party notices](NOTICE.md)
+- [Releases](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/releases) (`v5.29-gtnh.2`: BlueMap 5.29 plus
+  the port, and the ready 2.9.0 base and addon resource packs) · [Third-party notices](NOTICE.md)
 
 ## Repositories
 

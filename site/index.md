@@ -34,9 +34,9 @@ features:
     link: /architecture#vanilla-flattening
     linkText: Flattening
   - title: Modded blocks from your client
-    details: A one-shot client mod exports how every block state looks (4,087 blocks, 61,468 states from 138 mods) into a resource pack you build yourself and never redistribute.
+    details: A one-shot client mod exports how every block state looks (4,087 blocks, 61,468 states from 138 mods) into a resource pack. Ready 2.9.0 packs are attached to the releases (base pack for plain servers, addon pack for the five supported addons); export your own if your modlist differs.
     link: /guide/export
-    linkText: Export the pack
+    linkText: Get the pack
   - title: GregTech, drawn properly
     details: Dedicated renderers for GregTech machines, pipes, cables, ores and frames, formed multiblocks included, plus connected textures, Iron Chests, AE2 cables and EnderIO conduits.
     link: /status#what-works
@@ -72,7 +72,8 @@ same way. The full numbers and the list of gaps are on the [status page](/status
 
 ## Where to go next
 
-- **Server owners:** [requirements](/guide/), [install the mod](/guide/install), [export the resource pack](/guide/export).
+- **Server owners:** [requirements](/guide/), [install the mod](/guide/install), [get the resource pack](/guide/export)
+  (ready-made for plain 2.9.0 or 2.9.0 with the supported addons, or exported from your own client).
 - **Curious:** the [live demo](/showcase) shows a plaza of GTNH's end-game machines and GregTech multiblocks in your
   browser; the [architecture](/architecture) page shows how a 1.7.10 world becomes a BlueMap map.
 - **Developers:** the [workspace and toolchain](/development/), [builds](/development/building) and

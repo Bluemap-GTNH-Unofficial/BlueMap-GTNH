@@ -40,7 +40,7 @@ mise exec java@temurin-25.0.5+8.0.LTS -- ./gradlew \
 - The exporter compiles the reader's `legacy/.../ResourceKeys.kt` from the sibling `BlueMap/` checkout verbatim and
   fails without it.
 - Versions: `<bluemapUpstreamVersion>-gtnh.<gtnhRevision>` from BlueMap's root `gradle.properties` (for example
-  `5.29-gtnh.1`), shared by the mod jar, `mcmod.info` and BlueMap itself.
+  `5.29-gtnh.2`), shared by the mod jar, `mcmod.info` and BlueMap itself.
 
 ## BlueMap: CLI and addon jars
 

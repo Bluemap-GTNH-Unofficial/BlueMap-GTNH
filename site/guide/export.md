@@ -5,13 +5,32 @@ Modded blocks in 1.7.10 are drawn by code, not by resource-pack models, so BlueM
 every registered block looks and writes the answer as a BlueMap resource pack. Vanilla blocks are rendered from
 Mojang's 1.13 client jar and are not exported.
 
-Either route gives you `bluemap-gtnh-resources-2.9.0.zip` (named after the client's pack version; about 31 MB) and
-`export-report.json` with per-mod counts. If your server runs any of the [community addons](/guide/addons), export
+Either export route gives you `bluemap-gtnh-resources-2.9.0.zip` (named after the client's pack version; about 31 MB)
+and `export-report.json` with per-mod counts. If your server runs any of the [community addons](/guide/addons), export
 from a client that has the same addons and configuration.
 
-> [!CAUTION] Do not redistribute the pack
-> The pack contains the textures of the pack's mods. Use it on your own server only. Release assets of this project
-> never include one.
+## Ready-made packs
+
+For convenience, each release attaches two packs exported by this project from GTNH **2.9.0** clients. Pick the one
+that matches your server:
+
+| File | For | Exported from |
+|---|---|---|
+| `bluemap-gtnh-resources-2.9.0.zip` (base pack, about 31 MB) | plain GTNH 2.9.0 servers | a plain 2.9.0 client |
+| `bluemap-gtnh-resources-2.9.0-addons.zip` (addon pack, about 34 MB) | servers running the five supported [community addons](/guide/addons) | a 2.9.0 client with Twist Space Technology 0.8.0, Programmable Hatches 0.2.1p2, GT: Not Leisure 0.2.7-rc2.1 with GTNLLib 1.1.3, NH Utilities 1.7.0 and Box++ 2.2.0.0 |
+
+Download it from the [releases](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/releases), check it against
+`SHA256SUMS` and [install it](#install-the-pack).
+
+- **Your modlist differs?** Export your own pack (below). A pack from a client with exactly your mods, versions and
+  configuration matches your server best; the ready packs only know the blocks of 2.9.0 and these five addons.
+- **Textures.** The packs contain textures from Minecraft and from the pack's mods (and, in the addon pack, the
+  addons). They belong to their authors and stay under their licences; this project claims no rights to them.
+- **Non-commercial.** The packs are offered free of charge for non-commercial use only. Do not sell them or bundle
+  them with paid services.
+- **Takedown.** Rights holders who want them removed can
+  [open a takedown issue](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/issues/new?template=takedown.yml);
+  removal is prompt. `TAKEDOWN.md` in the release says the same.
 
 ## Route 1: the launcher (tested on macOS arm64)
 
@@ -34,7 +53,7 @@ uv run gtnh-client export --clean
 ```sh [use the released jar]
 cd gtnh-exporter/launcher
 uv run gtnh-client export --clean \
-  --mod-jar /path/to/bluemap-gtnh-exporter-0.1.0.jar
+  --mod-jar /path/to/bluemap-gtnh-exporter-0.2.0.jar
 ```
 
 ```sh [with community addons]
@@ -72,7 +91,7 @@ All options are in the
 ## Route 2: by hand (untested)
 
 1. Make a **copy** of your 2.9.0 client instance.
-2. Put `bluemap-gtnh-exporter-0.1.0.jar` into the copy's `mods/` folder.
+2. Put `bluemap-gtnh-exporter-0.2.0.jar` into the copy's `mods/` folder.
 3. Start the copy. When the main menu appears, the mod exports to `.minecraft/bluemap-gtnh-export/` and closes the
    game (exit code 0; 1 if the export failed).
 4. Remove the jar from the copy afterwards.
@@ -80,10 +99,13 @@ All options are in the
 ## Install the pack
 
 ```sh
-cp out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip /path/to/server/config/bluemap/packs/
+cp bluemap-gtnh-resources-2.9.0.zip /path/to/server/config/bluemap/packs/          # ready base pack (plain 2.9.0)
+cp bluemap-gtnh-resources-2.9.0-addons.zip /path/to/server/config/bluemap/packs/   # or the ready addon pack
+cp out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip /path/to/server/config/bluemap/packs/   # or your export
 ```
 
-then run `/bluemap reload` on the server (or restart it).
+Then run `/bluemap reload` on the server (or restart it). Keep one exported pack in `packs/` next to `gtnh-runtime/`;
+remove the old one when you switch.
 
 ## What gets exported
 

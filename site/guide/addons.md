@@ -39,9 +39,13 @@ It only stops a crash. GT: Not Leisure needs no change: its recipe output chance
 
 ## Export with the addons
 
-The exported pack has to come from a client with the same addons, so their blocks and GregTech machine textures are
-in it. With the launcher, use a separate client directory and pass the addon jars, GTNLLib included, with
-`--extra-mod`; see [export the resource pack](/guide/export#route-1-the-launcher-tested-on-macos-arm64). The result is
+The pack has to come from a client with the same addons, so their blocks and GregTech machine textures are in it. Of
+the two [ready-made packs](/guide/export#ready-made-packs) attached to the releases, use the addon pack
+`bluemap-gtnh-resources-2.9.0-addons.zip`: it was exported from a 2.9.0 client with exactly the five addons and
+versions above, so it fits a server with that modlist (the base pack `bluemap-gtnh-resources-2.9.0.zip` is for plain
+2.9.0 servers). To export your own, use a separate client directory with the launcher and pass the addon jars,
+GTNLLib included, with `--extra-mod`; see
+[export the resource pack](/guide/export#route-1-the-launcher-tested-on-macos-arm64). The result is
 `bluemap-gtnh-resources-2.9.0-addons.zip`; install it instead of the plain pack.
 
 ## Known addon problems

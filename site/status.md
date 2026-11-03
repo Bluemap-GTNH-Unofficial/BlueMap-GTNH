@@ -129,8 +129,9 @@ What the tests prove, and what they do not:
 ## GTNH 2.9.0
 
 The stable release (released 31 October 2026; client and server packs from downloads.gtnewhorizons.com) is the only
-supported pack version. The exported resource pack must come from a 2.9.0 client
-(`bluemap-gtnh-resources-2.9.0.zip`). Things that matter for the map:
+supported pack version. The exported resource pack must come from a 2.9.0 client: your own export, or the release's
+base pack (`bluemap-gtnh-resources-2.9.0.zip`, plain 2.9.0) or addon pack (`bluemap-gtnh-resources-2.9.0-addons.zip`,
+with the five supported addons). Things that matter for the map:
 
 - GT 5.09.54.265 adds MCPatcher connected textures for three DTPF casings; the exporter records them (98
   connected-texture entries).

@@ -1,5 +1,5 @@
 name: Takedown request
-description: Ask for content shown on the project site or in its demo release to be removed.
+description: Ask for content shown on the project site, in its demo release or in a release's resource pack to be removed.
 title: "Takedown: "
 labels: [takedown]
 body:
@@ -7,13 +7,14 @@ body:
     attributes:
       value: >-
         The site's demo shows textures from Minecraft, the GT New Horizons mods and Modernity-GTNH, rendered into map
-        tiles and screenshots. If you hold rights to any of it and want it removed, tell us what; it will be removed
-        promptly.
+        tiles and screenshots, and releases attach ready-made resource packs with textures from Minecraft, the GT New
+        Horizons mods and five community addons. If you hold rights to any of it and want it removed, tell us what; it
+        will be removed promptly.
   - type: textarea
     id: content
     attributes:
       label: What should be removed
-      description: Page URL, map, screenshot, mod or texture names.
+      description: Page URL, map, screenshot, release asset, mod or texture names.
     validations:
       required: true
   - type: input

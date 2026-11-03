@@ -61,7 +61,7 @@ of the most useful ones:
 | `/bluemap purge <map>` | delete the rendered data of a map |
 | `/bluemap tasks` | running render tasks; `tasks cancel all` stops them |
 | `/bluemap troubleshoot [map]` | diagnose a map |
-| `/bluemap version` | BlueMap version (`5.29-gtnh.1`) |
+| `/bluemap version` | BlueMap version (`5.29-gtnh.2`) |
 
 ### Over RCON
 
