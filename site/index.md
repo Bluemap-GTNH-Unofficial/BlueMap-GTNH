@@ -6,7 +6,7 @@ titleTemplate: Unofficial BlueMap port for GT New Horizons
 hero:
   name: BlueMap GTNH
   text: The 3D web map, for GT New Horizons
-  tagline: An unofficial port of BlueMap 5.29 to Minecraft 1.7.10 and the GTNH 2.9.0-RC-2 modpack. A Forge server mod that reads your world and renders vanilla terrain, GregTech machines and the pack's mods into a browser map.
+  tagline: An unofficial port of BlueMap 5.29 to Minecraft 1.7.10 and the GTNH 2.9.0 modpack (2.9.0-RC-2 is tested too). A Forge server mod that reads your world and renders vanilla terrain, GregTech machines and the pack's mods into a browser map.
   image:
     src: /logo.svg
     alt: BlueMap GTNH
@@ -42,7 +42,7 @@ features:
     link: /status#what-works
     linkText: What works
   - title: Community addons
-    details: Twist Space Technology, Programmable Hatches, GT Not Leisure, 123Technology, NH Utilities and the Box++ community fork load, export and render.
+    details: Twist Space Technology, Programmable Hatches, GT Not Leisure, NH Utilities and the Box++ community fork load, export and render; 123Technology on 2.9.0-RC-2 only.
     link: /guide/addons
     linkText: Addon setup
   - title: Lives in your server
@@ -55,8 +55,8 @@ features:
 
 ## Status
 
-Release **`v5.29-gtnh.1`** (BlueMap 5.29 plus the port). Everything below was measured on GTNH 2.9.0-RC-2, on one
-machine.
+Release **`v5.29-gtnh.1`** (BlueMap 5.29 plus the port). It supports GTNH 2.9.0 and is verified on 2.9.0 and
+2.9.0-RC-2. The numbers below were measured on GTNH 2.9.0-RC-2, on one machine.
 
 <div class="status-grid">
   <div class="stat"><span class="value">0</span><span class="label">mismatches between the world reader and the live server, 12 scenes</span></div>
@@ -72,8 +72,8 @@ and being reworked. The full list of gaps is on the [status page](/status).
 ## Where to go next
 
 - **Server owners:** [requirements](/guide/), [install the mod](/guide/install), [export the resource pack](/guide/export).
-- **Curious:** the [live demo](/showcase) renders two test scenes in your browser; the [architecture](/architecture)
-  page shows how a 1.7.10 world becomes a BlueMap map.
+- **Curious:** the [live demo](/showcase) shows a plaza of GTNH's end-game machines and GregTech multiblocks in your
+  browser; the [architecture](/architecture) page shows how a 1.7.10 world becomes a BlueMap map.
 - **Developers:** the [workspace and toolchain](/development/), [builds](/development/building) and
   [tests](/development/testing).
 

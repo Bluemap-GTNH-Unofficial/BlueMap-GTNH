@@ -9,7 +9,7 @@ resource-pack model, and a client-side exporter that captures how modded blocks 
 
 ```mermaid
 flowchart TB
-  subgraph server["GTNH 2.9.0-RC-2 server, Java 25"]
+  subgraph server["GTNH 2.9.0 (or 2.9.0-RC-2) server, Java 25"]
     world[("World save<br/>1.7.10 Anvil, EndlessIDs")]
     mod["Server mod<br/>implementations/gtnh"]
     runtime["gtnh-runtime pack<br/>dimension types, modded biomes"]
@@ -101,7 +101,7 @@ flowchart LR
   probe --> cap["Other shapes<br/>captured tessellator quads"]
   probe --> bbox["TESR only<br/>bounding-box fallback"]
   client --> gtdump["GregTech dump<br/>MTEs, casings, materials, ores"]
-  cube --> out[["bluemap-gtnh-resources-2.9.0-RC-2.zip<br/>export-report.json"]]
+  cube --> out[["bluemap-gtnh-resources-2.9.0.zip<br/>export-report.json"]]
   cap --> out
   bbox --> out
   gtdump --> out
@@ -151,7 +151,7 @@ renderers without textures are coloured with a white texture from the exporter a
 ```mermaid
 flowchart LR
   orch["orchestrator<br/>orch scene NAME"] -->|RCON| server["Headless GTNH server<br/>with the bmh harness mod"]
-  server --> worlds[("worlds/SCENE")]
+  server --> worlds[("worlds-2.9.0/SCENE")]
   server --> dump["dump.ndjson<br/>live block state"]
   worlds --> verify[":legacy:verifyDump"]
   dump --> verify

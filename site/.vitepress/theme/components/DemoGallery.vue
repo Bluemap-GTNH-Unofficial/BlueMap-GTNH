@@ -1,23 +1,17 @@
 <script setup lang="ts">
 import { withBase } from "vitepress";
 import { onMounted, ref } from "vue";
-import { demoHash, loadJson, type GalleryImage } from "../demo";
+import { loadGallery, showInMap, type GalleryImage } from "../demo";
 
 const images = ref<GalleryImage[] | null>(null);
 const loaded = ref(false);
 
 onMounted(async () => {
-  const gallery = await loadJson("/generated/gallery.json", (value): value is { images: GalleryImage[] } =>
-    typeof value === "object" && value !== null && "images" in value && Array.isArray(value.images),
-  );
-  images.value = gallery?.images ?? null;
+  const gallery = await loadGallery();
+  const shots = gallery?.images.filter((image) => (image.group ?? "gallery") === "gallery") ?? [];
+  images.value = shots.length > 0 ? shots : null;
   loaded.value = true;
 });
-
-function showInMap(image: GalleryImage): void {
-  demoHash.value = image.hash;
-  document.querySelector(".demo-map")?.scrollIntoView({ behavior: "smooth", block: "center" });
-}
 </script>
 
 <template>
@@ -35,7 +29,7 @@ function showInMap(image: GalleryImage): void {
       <figcaption>
         <strong>{{ image.title }}</strong>
         <span>{{ image.caption }}</span>
-        <button type="button" @click="showInMap(image)">Show in the live map</button>
+        <button type="button" @click="showInMap(image.hash)">Show in the live map</button>
       </figcaption>
     </figure>
   </div>

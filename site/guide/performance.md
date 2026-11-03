@@ -46,5 +46,7 @@ render-thread-count: 8
 
 ## Small scenes
 
-The test scenes are small superflat worlds; the CLI renders one in seconds. The two scenes of this site's
-[demo](/showcase) (`gt-multiblocks` and `gtnh-zoo`, 562 tiles) render in under 10 s with 16 threads.
+The test scenes are small superflat worlds; the CLI renders one in seconds. The three maps of this site's
+[demo](/showcase) (the 305 × 456-block end-game plaza with Modernity-GTNH and with default textures, and
+`gt-multiblocks` with Modernity-GTNH; 953 tiles) render in about 18 s with 16 threads, in two CLI runs of 10.8 s and
+7.4 s.

@@ -15,7 +15,8 @@ starts through lwjgl3ify (`@java9args.txt -jar lwjgl3ify-forgePatches.jar nogui`
 
 That is BlueMap's missing-texture cube. Either the exported pack is missing, or it does not match the pack:
 
-- Check that `bluemap-gtnh-resources-2.9.0-RC-2.zip` is in `config/bluemap/packs/` and run `/bluemap reload`, then
+- Check that the pack of your server's version (`bluemap-gtnh-resources-2.9.0.zip` on 2.9.0,
+  `bluemap-gtnh-resources-2.9.0-RC-2.zip` on 2.9.0-RC-2) is in `config/bluemap/packs/` and run `/bluemap reload`, then
   `/bluemap force-update` for the affected area.
 - Export from a client with the same pack version and the same addons as the server.
 - 518 block states cannot be exported at all on 2.9.0-RC-2 and always show as missing-texture cubes; see
@@ -54,10 +55,8 @@ client take about 96 s. The launcher stops the client after `--timeout` (1800 s 
 ## The server crashes with the community addons
 
 - **On start, in a Twist Space Technology recipe:** set `crashOnNullRecipeInput=false` in
-  `config/GregTech/GregTech.cfg`. See [community addons](/guide/addons).
-- **TST multiblocks never form:** set `enableRecipeOutputChance=false` in `config/GTNotLeisure/GTNotLeisure.cfg`.
-- **One tick after placing GTNL machine 21153** (Eye of Harmony module): a GTNL bug on 2.9.0-RC-2,
-  `NoSuchMethodError getActivitySoundLoop`. Do not place that machine.
+  `config/GregTech/GregTech.cfg`; needed on 2.9.0 (TST 0.8.0). See [community addons](/guide/addons).
+- **GT: Not Leisure 0.2.7-rc2.1 does not load:** install GTNLLib 1.1.3 (required since rc2.1).
 
 ## `/bluemap reload` answers "Still running ..."
 

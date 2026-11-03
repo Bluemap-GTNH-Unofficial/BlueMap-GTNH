@@ -67,7 +67,7 @@ export default withMermaid(
   defineConfig({
     title: "BlueMap GTNH",
     description:
-      "Unofficial port of BlueMap, the 3D web map for Minecraft, to Minecraft 1.7.10 and GT New Horizons 2.9.0-RC-2.",
+      "Unofficial port of BlueMap, the 3D web map for Minecraft, to Minecraft 1.7.10 and GT New Horizons 2.9.0.",
     base,
     cleanUrls: true,
     lastUpdated: true,
@@ -129,7 +129,7 @@ export default withMermaid(
         lang: "zh-CN",
         link: "/zh/",
         title: "BlueMap GTNH",
-        description: "BlueMap 3D 网页地图的非官方移植：Minecraft 1.7.10 与 GT New Horizons 2.9.0-RC-2。",
+        description: "BlueMap 3D 网页地图的非官方移植：Minecraft 1.7.10 与 GT New Horizons 2.9.0。",
         themeConfig: {
           nav: [
             { text: "指南（英文）", link: "/guide/" },
@@ -173,7 +173,9 @@ export default withMermaid(
       socialLinks: [{ icon: "github", link: umbrella }],
       footer: {
         message:
-          "Unofficial and vibe coded. Not affiliated with BlueMap, GT New Horizons, Mojang or Microsoft. No warranty.",
+          "Unofficial and vibe coded. Not affiliated with BlueMap, GT New Horizons, Mojang or Microsoft. No warranty. " +
+          "The demo shows Minecraft, GTNH mod and Modernity-GTNH (CC BY-NC-SA 4.0) textures, non-commercially; " +
+          `rights holders can <a href="${umbrella}/issues/new?template=takedown.yml">request a takedown</a>.`,
         copyright: "MIT licence, except where NOTICE.md says otherwise.",
       },
     },

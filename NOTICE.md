@@ -24,7 +24,7 @@ or, for `Vanilla*.kt`, files in `BlueMap/legacy/src/main/kotlin/de/bluecolored/b
 | Source | Copyright / author | Licence | What we used | Where |
 |---|---|---|---|---|
 | [BlueMap](https://github.com/BlueMap-Minecraft/BlueMap) 5.29 | Copyright (c) Blue (Lukas Rieger) and contributors | MIT | Code: the `BlueMap` submodule is a fork. Upstream copyright and licence are kept in `BlueMap/LICENSE` and in every source header. | `BlueMap/` |
-| [GT: Not Leisure](https://github.com/ABKQPO/GT-Not-Leisure) (GTNL) 0.2.7-rc2 | HFstudio, ABKQPO and contributors (per its `mcmod.info` and repository) | LGPL-3.0 (its `LICENSE.txt` at tag 0.2.7-rc2) | Code adapted: the liquid layer split of `MultiEssentiaJarRenderer` and the beam pitch/yaw formulas of `BeamFormerRenderHelper`. Other GTNL facts used (model names, NBT keys, sizes) are data. | `GtnlTesrs.kt`: `MultiEssentiaJar.layers()`, `BeamFormer.beam()` |
+| [GT: Not Leisure](https://github.com/GTNotLeisure/GT-Not-Leisure) (GTNL) 0.2.7-rc2 | HFstudio, ABKQPO and contributors (per its `mcmod.info` and repository) | LGPL-3.0 (its `LICENSE.txt` at tag 0.2.7-rc2) | Code adapted: the liquid layer split of `MultiEssentiaJarRenderer` and the beam pitch/yaw formulas of `BeamFormerRenderHelper`. Other GTNL facts used (model names, NBT keys, sizes) are data; they were checked again against 0.2.7-rc2.1 (GPL-3.0), the version supported on GTNH 2.9.0, and nothing was taken from that version. | `GtnlTesrs.kt`: `MultiEssentiaJar.layers()`, `BeamFormer.beam()` |
 | [MyCTMLib](https://github.com/ABKQPO/MyCTMLib) | Copyright (c) 2024 初夏同学 | MIT | Code adapted: `MyCtm.indices()` is adapted from `Textures.buildConnect`. The `.mcmeta` `myctmlib` section format is read as data. | `BlueMap/gtnh-render/.../mods/ctm/MyCtm.kt`; `gtnh-exporter` `TextureExporter.recordCtm` (format only) |
 | Minecraft 1.7.10 and 1.13 | Minecraft (c) Mojang AB / Microsoft | All rights reserved | Behaviour re-implemented in Kotlin, closely following the vanilla logic: the `ModelBox` box builder, the 1.13 stairs shape and redstone wire side rules, and 1.13 block face shapes. Credited to Mojang. | `EntityModel.box()`; `VanillaFixers.kt` `stairsShape()`, `redstoneWire()`; `VanillaBlockShapes.kt` |
 | [Applied Energistics 2 Unofficial](https://github.com/GTNewHorizons/Applied-Energistics-2-Unofficial) API (`AEColor`) | Copyright (c) 2013 AlgorithmX2 | MIT | Data: the 17 cable colours (dark, medium and bright variants). | `Ae2CableBusRenderer.kt` `AE_COLORS`, `GtnlTesrs.kt` `BeamFormer.COLORS` |
@@ -37,7 +37,8 @@ or, for `Vanilla*.kt`, files in `BlueMap/legacy/src/main/kotlin/de/bluecolored/b
 
 `MultiEssentiaJar.layers()` in `GtnlTesrs.kt` is adapted from GTNL's `MultiEssentiaJarRenderer`, and the two
 pitch/yaw lines of `BeamFormer.beam()` from GTNL's `BeamFormerRenderHelper` (GTNL 0.2.7-rc2, licensed LGPL-3.0 at that
-tag; later GTNL releases moved to GPL-3.0). These parts remain available under the
+tag; later GTNL releases moved to GPL-3.0, including 0.2.7-rc2.1, which the port supports on GTNH 2.9.0; neither part
+was taken again from it). These parts remain available under the
 [GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.html): you may use, change and
 redistribute them under its terms. Their source is the file itself. The rest of `GtnlTesrs.kt` is MIT.
 
@@ -98,6 +99,8 @@ files of these mods are committed. `mods/` and `gregtech/` are under
 Supported addons that are only rendered from the exported pack, with no code or data taken from their sources:
 [NH Utilities](https://github.com/Keriils/NH-Utilities) (GPL-3.0) and
 [Programmable Hatches](https://github.com/reobf/Programmable-Hatches-Mod) (MIT, Copyright (c) 2024 reobf).
+[GTNLLib](https://github.com/GTNotLeisure/GTNLLib) (GPL-3.0) is installed only because GT: Not Leisure 0.2.7-rc2.1
+requires it; it has no blocks, and nothing is taken from it.
 
 Cross-checks against [ViaVersion/Mappings](https://github.com/ViaVersion/Mappings) and PaperMC DataConverter were
 informational only; nothing was copied from them.
@@ -156,8 +159,16 @@ The world reader and the renderers do not link any mod. They read world files an
 - **Release assets never include an exported resource pack.** The exporter builds the pack on the user's own machine
   from the user's own copy of the pack, because the result contains other authors' textures.
 - [Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH) is licensed CC BY-NC-SA 4.0. Its files are never
-  committed or redistributed here. The `modernity` tool only converts a release the user downloaded, and the packs it
-  writes carry a licence notice: non-commercial use only, share alike.
+  committed here. The `modernity` tool only converts a release the user downloaded, and the packs it writes carry a
+  licence notice: non-commercial use only, share alike.
 - Screenshots and e2e baselines are not committed to any repository. The screenshots attached to releases and the
   baselines and oracle images generated locally are renders of test worlds that contain textures from Minecraft and
   from GT New Horizons mods; they remain the property of their authors.
+- **Site demo.** The live map and screenshots on the [demo page](https://bluemap-gtnh-unofficial.github.io/BlueMap-GTNH/showcase)
+  show textures from Minecraft (Mojang), the GT New Horizons mods and Modernity-GTNH (by its contributors). They are
+  never committed; they are published as `demo-*` pre-release assets of this repository and deployed with the site,
+  for non-commercial demonstration only. Modernity-GTNH's textures were changed by rendering them into map tiles and
+  screenshots; those are shared under the same licence,
+  [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/). Rights holders who want something removed
+  can [open a takedown issue](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/issues/new?template=takedown.yml),
+  and it will be removed promptly.

@@ -1,6 +1,8 @@
 import type { Theme } from "vitepress";
 import DefaultTheme from "vitepress/theme";
 import { h } from "vue";
+import DemoCompare from "./components/DemoCompare.vue";
+import DemoEndgame from "./components/DemoEndgame.vue";
 import DemoGallery from "./components/DemoGallery.vue";
 import DemoMap from "./components/DemoMap.vue";
 import DisclaimerBanner from "./components/DisclaimerBanner.vue";
@@ -17,6 +19,8 @@ export default {
     }),
   enhanceApp({ app }) {
     app.component("DemoMap", DemoMap);
+    app.component("DemoEndgame", DemoEndgame);
+    app.component("DemoCompare", DemoCompare);
     app.component("DemoGallery", DemoGallery);
   },
 } satisfies Theme;

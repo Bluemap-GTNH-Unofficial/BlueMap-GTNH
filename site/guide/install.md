@@ -21,7 +21,7 @@ accept-download: true
 ```
 
 ```sh [copy the pack]
-cp bluemap-gtnh-resources-2.9.0-RC-2.zip /path/to/server/config/bluemap/packs/
+cp bluemap-gtnh-resources-2.9.0.zip /path/to/server/config/bluemap/packs/   # 2.9.0-RC-2: bluemap-gtnh-resources-2.9.0-RC-2.zip
 ```
 
 ```text [server console / RCON]
@@ -41,7 +41,8 @@ bluemap reload
 
 ## Requirements recap
 
-- GTNH **2.9.0-RC-2**, Java 17-26 server pack, running on **Java 25** (lwjgl3ify). On Java 8 the mod does not load.
+- GTNH **2.9.0** (or the also tested 2.9.0-RC-2), Java 17-26 server pack, running on **Java 25** (lwjgl3ify). On
+  Java 8 the mod does not load. The same mod jar runs on both pack versions.
 - Forgelin, which the pack provides.
 - The exported resource pack, or modded blocks render as missing-texture cubes.
 

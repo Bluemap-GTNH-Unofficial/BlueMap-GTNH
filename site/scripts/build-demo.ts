@@ -1,27 +1,34 @@
-// Builds the local demo of the site: a static BlueMap webapp with small test scenes in `public/demo/` and a
-// screenshot gallery in `public/generated/`. Both are generated, git-ignored and never committed (they contain
-// Minecraft and mod textures).
+// Builds the local demo of the site: a static BlueMap webapp with test scene maps in `public/demo/` and a screenshot
+// gallery in `public/generated/`. Both are generated, git-ignored and never committed (they contain Minecraft, mod
+// and Modernity-GTNH textures).
 //
 // Rendering mirrors `e2e/src/e2e/bluemap.py`: the BlueMap CLI of the fork with the `legacy` and `gtnh-render` addon
-// jars and the exported resource pack, loader `gtnh:anvil_1_7`, scene worlds from `<workspace>/worlds/`. Differences:
-// one map per scene (the overworld), no webserver, gzip file storage with the webapp's `client-decompression`, and a
-// service worker (demo-sw.js) so that any plain static file server (GitHub Pages included) can host the map.
+// jars, loader `gtnh:anvil_1_7`, scene worlds from the pack version's `<workspace>/worlds-<version>/`. Every map
+// names its textures: `default` is the exported resource pack, `modernity` adds the two Modernity-GTNH packs of
+// `out/modernity/` on top of it, as `modernity e2e` does. BlueMap loads one set of resource packs per run, so each
+// texture is a CLI run of its own into the same webroot. Differences to e2e: one map per scene (the overworld), no
+// webserver, gzip file storage with the webapp's `client-decompression`, and a service worker (demo-sw.js) so that any
+// plain static file server (GitHub Pages included) can host the map.
 //
-//   pnpm demo                         render + gallery
-//   pnpm demo --skip-render           gallery only, from the existing public/demo
-//   pnpm demo --build                 build the CLI and addon jars with Gradle first
-//   pnpm demo --scenes gt-multiblocks gallery/maps of a subset of the scenes
+// The end-game maps take one camera per machine from the scene's `out/scenes-<version>/endgame/scene.json` (labels
+// and boxes), aimed in the browser with the webapp's own perspective controls, so "Show in the live map" lands on the
+// same view.
+//
+//   pnpm demo                           render + gallery
+//   pnpm demo --skip-render             gallery only, from the existing public/demo
+//   pnpm demo --build                   build the CLI and addon jars with Gradle first
+//   pnpm demo --maps gt_multiblocks_modernity,gtnh_zoo_default   a subset of the maps (ids below)
 //
 // Environment: BMGTNH_WORKSPACE (default: the parent of site/), BMGTNH_JAVA (default: mise java@temurin-25).
 
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium, type Page } from "playwright";
 
 const SITE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WS = path.resolve(process.env.BMGTNH_WORKSPACE ?? path.join(SITE, ".."));
@@ -29,97 +36,171 @@ const DEMO = path.join(SITE, "public", "demo");
 const GALLERY = path.join(SITE, "public", "generated");
 const WORK = path.join(WS, "out", "site-demo");
 const JAVA_TOOL = "java@temurin-25.0.5+8.0.LTS";
-const PACK = path.join(WS, "out", "exporter", "bluemap-gtnh-resources-2.9.0-RC-2.zip");
+const PACK_VERSION = "2.9.0"; // the GTNH pack the worlds, scene outputs, exported pack and Modernity pack are built on
+const WORLDS = path.join(WS, `worlds-${PACK_VERSION}`);
+const SCENES = path.join(WS, "out", `scenes-${PACK_VERSION}`);
+const PACK = path.join(WS, "out", `exporter-${PACK_VERSION}`, `bluemap-gtnh-resources-${PACK_VERSION}.zip`);
+const ORCH_SCENE = "uv run orch scene";
+const MODERNITY = path.join(WS, "out", "modernity");
+
+type Texture = "modernity" | "default";
+const TEXTURE_NAMES: Record<Texture, string> = { modernity: "Modernity-GTNH textures", default: "default textures" };
+
+type Box = [number, number, number, number, number, number]; // inclusive block box x1, y1, z1, x2, y2, z2
 
 interface View {
   file: string;
   title: string;
   caption: string;
-  // webapp location hash without '#': map:x:y:z:distance:rotation:angle:tilt:ortho:mode
-  hash: string;
+  // a fixed camera: the webapp location hash after "<map>:", x:y:z:distance:rotation:angle:tilt:ortho:mode ...
+  camera?: string;
+  // ... or a perspective camera aimed at a box in the browser (aim())
+  aim?: Aim;
 }
 
-interface Scene {
-  scene: string; // folder under <workspace>/worlds
-  map: string; // BlueMap map id
-  name: string; // shown in the webapp's map list
-  startPos: [number, number];
-  views: View[];
+interface Aim {
+  box: Box;
+  rotation: number; // the webapp's: 0 looks north (-z), PI/2 east
+  angle: number; // 0 looks straight down, PI/2 level
+  margin: number; // share of the view the box may fill
 }
+
+interface DemoMap {
+  scene: string; // folder under the pack version's <workspace>/worlds and out/scenes
+  title: string; // the map list shows "<title> (<textures>)"
+  texture: Texture;
+  startPos?: [number, number]; // default: the centre of the scene's plaza
+  views: View[];
+  machines?: boolean; // add an overview and one view per machine of the pack version's out/scenes/<scene>/scene.json
+  optional?: boolean; // only with --maps
+}
+
+const mapId = (m: DemoMap): string => `${m.scene.replaceAll("-", "_")}_${m.texture}`;
 
 // Camera positions follow the e2e scene views (e2e/scenes/<scene>.yaml).
-const SCENES: Scene[] = [
+const MAPS: DemoMap[] = [
+  { scene: "endgame", title: "End-game machines", texture: "modernity", views: [], machines: true },
   {
     scene: "gt-multiblocks",
-    map: "gt_multiblocks",
-    name: "GregTech multiblocks",
+    title: "GregTech multiblocks",
+    texture: "modernity",
     startPos: [24, 10],
     views: [
       {
         file: "gt-ebf.jpg",
         title: "Electric Blast Furnace",
         caption: "A formed EBF from the south-east: heating coils, casings, hatches and the controller front overlay.",
-        hash: "gt_multiblocks:6:25:8:0:-0.9:1:0:0:free",
+        camera: "6:25:8:0:-0.9:1:0:0:free",
       },
       {
         file: "gt-distillation-tower.jpg",
         title: "Distillation Tower",
         caption: "The distillation tower controller and its output hatches, seen from the front.",
-        hash: "gt_multiblocks:192.5:25:-12:0:3.14159:1.35:0:0:free",
+        camera: "192.5:25:-12:0:3.14159:1.35:0:0:free",
       },
       {
         file: "gt-assembly-line.jpg",
         title: "Assembly Line",
         caption: "The assembly line with its input buses and casings.",
-        hash: "gt_multiblocks:240.5:24:-14:0:3.14159:1.35:0:0:free",
+        camera: "240.5:24:-14:0:3.14159:1.35:0:0:free",
       },
       {
         file: "gt-mega-ebf.jpg",
         title: "Mega Blast Furnace",
         caption: "The Mega Blast Furnace, one of the largest structures in the scene, behind its glass walls.",
-        hash: "gt_multiblocks:576.5:28:-18:0:3.14159:1.35:0:0:free",
+        camera: "576.5:28:-18:0:3.14159:1.35:0:0:free",
       },
       {
         file: "gt-large-turbine.jpg",
         title: "Large Turbine",
         caption: "A large turbine from the front. Its rotor comes from a special (TESR) renderer and is not drawn.",
-        hash: "gt_multiblocks:384.5:22:-6:0:3.14159:1.35:0:0:free",
+        camera: "384.5:22:-6:0:3.14159:1.35:0:0:free",
       },
     ],
   },
+  // the same plaza with the exported pack only: the "Modernity vs default" comparisons are taken on it
+  { scene: "endgame", title: "End-game machines", texture: "default", views: [] },
   {
     scene: "gtnh-zoo",
-    map: "gtnh_zoo",
-    name: "GTNH block zoo",
+    title: "GTNH block zoo",
+    texture: "default",
     startPos: [129, 128],
+    optional: true,
     views: [
       {
         file: "zoo-first-rows.jpg",
         title: "Block zoo",
         caption: "The first rows of the zoo: 16,642 blocks of every mod in the pack on a 2-block grid, by block id.",
-        hash: "gtnh_zoo:16:5:16:40:0.6:1:0:0:perspective",
+        camera: "16:5:16:40:0.6:1:0:0:perspective",
       },
       {
         file: "zoo-middle.jpg",
         title: "Modded blocks up close",
         caption: "The middle of the zoo: blocks from many mods, drawn from the exported resource pack.",
-        hash: "gtnh_zoo:129:5:128:40:0.6:1:0:0:perspective",
+        camera: "129:5:128:40:0.6:1:0:0:perspective",
       },
       {
         file: "zoo-far-corner.jpg",
         title: "Last rows",
         caption: "The last rows of the zoo, with the highest block ids. Magenta cubes are states the exporter could not capture.",
-        hash: "gtnh_zoo:236:5:236:40:0.6:1:0:0:perspective",
+        camera: "236:5:236:40:0.6:1:0:0:perspective",
       },
     ],
   },
 ];
 
+// Modernity vs default: these end-game machines are also shot on the default-texture map, with the same camera.
+const COMPARE = ["mega-ebf", "dtpf"];
+
+// End-game views: from the north-west (the controllers face north), flat machines from higher up.
+const MACHINE_VIEW = { rotation: 2.5, angle: 1.0, margin: 0.86 };
+const FLAT_VIEW = { angle: 0.78 };
+const FLAT_MACHINES = /^(fusion-mk|compact-fusion-mk|lhc$)/;
+
+// What the screenshots of the end-game machines show, besides the name; the tier is the one the scene builds.
+const MACHINE_NOTES: Record<string, string> = {
+  "fusion-mk1": "GregTech's first fusion reactor ring, 15 × 3 × 15 blocks.",
+  "fusion-mk2": "Mark II: the same ring with fusion casings and coils of the next tier.",
+  "fusion-mk3": "Mark III, the last GregTech fusion computer.",
+  "fusion-mk4": "GT++'s Mark IV fusion reactor.",
+  "fusion-mk5": "GT++'s Mark V, the top of the classic fusion line.",
+  "compact-fusion-mk1": "GoodGenerator's compact fusion computer: a ring 47 blocks across.",
+  "compact-fusion-mk2": "Compact fusion Mk-II.",
+  "compact-fusion-mk3": "Compact fusion Mk-III.",
+  "compact-fusion-mk4": "Compact fusion Mk-IV.",
+  "compact-fusion-mk5": "Compact fusion Mk-V, the largest fusion computer.",
+  "mega-ebf": "Eternal heating coils and UXV-tier glass, the highest tiers the structure takes.",
+  "mega-vf": "With tier 2 (rhugnor) casings.",
+  "mega-dt": "All five layers: 54 blocks tall, the tallest machine of the plaza.",
+  "mega-chem": "With UXV-tier glass.",
+  "mega-oil-cracker": "Eternal coils and UXV-tier glass.",
+  "mega-abs": "Eternal coils and UXV-tier glass.",
+  "mega-apiary": "Kubatech's mega apiary (the Industrial Apicultural Acclimatiser and Drone Domestication Station) with UXV glass and a LuV energy hatch.",
+  eig: "Kubatech's greenhouse with UXV glass; the machine fills in its own water and farmland once formed.",
+  eec: "The Extreme Entity Crusher with UXV glass.",
+  qft: "Top-tier pulse manipulators and shielding cores. The force field is only drawn while it runs.",
+  tpm: "The Transcendent Plasma Mixer.",
+  nfr: "With tier 4 field restriction coils.",
+  lnr: "The Large Naquadah Reactor.",
+  cal: "MAX-tier Component Assembly Line casings, 33 blocks long.",
+  "precise-assembler": "Top-tier precise electronic unit casings, machine casings and glass.",
+  defc: "The Draconic Evolution Fusion Crafter with the top core tier.",
+  "dyson-swarm": "The ground unit of the Dyson swarm.",
+  "nanochip-complex": "63 × 49 × 63 blocks; its modules are separate machines and not built here.",
+  eoh: "Tier 9 spacetime compression, time dilation and stabilisation field generators. A running Eye of Harmony shows a star in its centre, which is a special (TESR) renderer; this one is idle.",
+  dtpf: "Eternal coils, the highest tier.",
+  "space-elevator": "Motor tier 5 and the extension ring. In the game a tether runs from the base into the sky; it is a special (TESR) renderer, so the map shows only the base.",
+  "antimatter-forge": "The Semi-Stable Antimatter Stabilization Sequencer, 53 blocks across. Its antimatter is only drawn while it holds some.",
+  "antimatter-generator": "The Shielded Lagrangian Annihilation Matrix.",
+  godforge: "All three rings and one module of each kind (Helioflare Power Forge, Helioflux Melting Core, Heliothermal Plasma Fabricator, Heliofusion Exoticizer): 127 × 29 × 187 blocks. Fuelled, the Godforge replaces its rings with a rotating star render (TESR); unfuelled, as here, the game shows these blocks too.",
+  lhc: "The Large Hadron Collider with all four modules: 115 × 16 × 125 blocks.",
+};
+
 const { values: args } = parseArgs({
   options: {
     "skip-render": { type: "boolean", default: false },
     build: { type: "boolean", default: false },
-    scenes: { type: "string", multiple: true },
+    maps: { type: "string", multiple: true },
     threads: { type: "string" },
   },
 });
@@ -133,12 +214,61 @@ function log(message: string): void {
   console.log(`demo: ${message}`);
 }
 
-function selectedScenes(): Scene[] {
-  const wanted = (args.scenes ?? []).flatMap((s) => s.split(","));
-  if (wanted.length === 0) return SCENES;
-  const unknown = wanted.filter((w) => !SCENES.some((s) => s.scene === w));
-  if (unknown.length > 0) fail(`unknown scene(s) ${unknown.join(", ")}; known: ${SCENES.map((s) => s.scene).join(", ")}`);
-  return SCENES.filter((s) => wanted.includes(s.scene));
+function selectedMaps(): DemoMap[] {
+  const wanted = (args.maps ?? []).flatMap((s) => s.split(","));
+  if (wanted.length === 0) return MAPS.filter((m) => !m.optional);
+  const unknown = wanted.filter((w) => !MAPS.some((m) => mapId(m) === w));
+  if (unknown.length > 0) fail(`unknown map(s) ${unknown.join(", ")}; known: ${MAPS.map(mapId).join(", ")}`);
+  return MAPS.filter((m) => wanted.includes(mapId(m)));
+}
+
+interface SceneMachine {
+  key: string;
+  label: string;
+  alias?: string;
+  mte: number;
+  tier: number;
+  row: string;
+  box: Box;
+}
+
+interface SceneFile {
+  plaza?: { box: Box };
+  machines?: SceneMachine[];
+}
+
+function sceneFile(scene: string): SceneFile {
+  const file = path.join(SCENES, scene, "scene.json");
+  if (!fs.existsSync(file)) fail(`${path.relative(WS, file)} missing (cd orchestrator && ${ORCH_SCENE} ${scene})`);
+  return JSON.parse(fs.readFileSync(file, "utf8")) as SceneFile;
+}
+
+// The overview and one aimed view per machine, labelled from the scene; file names do not depend on the texture.
+function machineViews(scene: string): View[] {
+  const data = sceneFile(scene);
+  if (!data.plaza || !data.machines) fail(`${path.relative(WS, SCENES)}/${scene}/scene.json has no plaza/machines`);
+  const overview: View = {
+    file: `${scene}-overview.jpg`,
+    title: "The plaza",
+    caption: `All ${data.machines.length} machines from the north-west: fusion reactors in front, the Forge of the Gods and the Large Hadron Collider at the back.`,
+    aim: { box: data.plaza.box, rotation: 2.55, angle: 0.9, margin: 0.95 },
+  };
+  return [
+    overview,
+    ...data.machines.map((m) => ({
+      file: `${scene}-${m.key}.jpg`,
+      title: m.alias ? `${m.alias} (${m.label})` : m.label,
+      caption: MACHINE_NOTES[m.key] ?? `${m.label}, tier ${m.tier}.`,
+      aim: { box: m.box, ...MACHINE_VIEW, ...(FLAT_MACHINES.test(m.key) ? FLAT_VIEW : {}) },
+    })),
+  ];
+}
+
+function startPos(map: DemoMap): [number, number] {
+  if (map.startPos) return map.startPos;
+  const box = sceneFile(map.scene).plaza?.box;
+  if (!box) fail(`no startPos for ${mapId(map)} and no plaza in its scene.json`);
+  return [Math.round((box[0] + box[3] + 1) / 2), Math.round((box[2] + box[5] + 1) / 2)];
 }
 
 function java(): string {
@@ -188,8 +318,24 @@ function locateJars(repo: string): { cli: string; addons: string[] } {
   return { cli, addons };
 }
 
-function writeConfig(scenes: Scene[], jars: { addons: string[] }, threads: number): string {
-  const config = path.join(WORK, "config");
+// Resource packs of a texture variant. BlueMap loads packs/ in reverse file-name order and the first pack providing a
+// resource wins, so the `modernity-…` packs take priority over `bluemap-gtnh-resources-…` (see modernity/README.md).
+function texturePacks(texture: Texture): string[] {
+  if (!fs.existsSync(PACK)) fail(`exported resource pack missing: ${PACK} (see the exporter guide)`);
+  if (texture === "default") return [PACK];
+  const modded = newest(MODERNITY, (n) => n.startsWith("modernity-") && n.endsWith(`-modded-${PACK_VERSION}.zip`));
+  const vanilla = newest(MODERNITY, (n) => /^modernity-.*-vanilla-1\.13\.zip$/.test(n));
+  if (!modded || !vanilla) {
+    fail(
+      "Modernity packs missing in out/modernity (cd modernity && uv run modernity " +
+        "fetch, vanilla and modded)",
+    );
+  }
+  return [PACK, modded, vanilla];
+}
+
+function writeConfig(maps: DemoMap[], texture: Texture, jars: { addons: string[] }, threads: number): string {
+  const config = path.join(WORK, `config-${texture}`);
   const data = path.join(WORK, "data");
   fs.rmSync(config, { recursive: true, force: true });
   for (const sub of ["maps", "storages", "packs"]) fs.mkdirSync(path.join(config, sub), { recursive: true });
@@ -207,34 +353,39 @@ function writeConfig(scenes: Scene[], jars: { addons: string[] }, threads: numbe
     "render-thread-count": threads,
     "scan-for-mod-resources": false,
     metrics: false,
-    log: { file: path.join(data, "logs", "debug.log"), append: false },
+    log: { file: path.join(data, "logs", `debug-${texture}.log`), append: false },
   });
   write("webapp.conf", {
     enabled: true,
     webroot: DEMO,
-    "update-settings-file": true,
+    "update-settings-file": true, // each run lists only its own maps; finishWebroot() lists them all
     "use-cookies": false,
     // map data stays gzip files on disk and the webapp inflates it itself: no webserver configuration needed
     "client-decompression": true,
+    // the end-game plaza is about 300 × 450 blocks: keep it in full detail from the overview
+    "hires-slider-default": 300,
   });
   write("webserver.conf", { enabled: false });
   write("storages/file.conf", { "storage-type": "file", root: path.join(DEMO, "maps"), compression: "gzip" });
-  scenes.forEach((scene, sorting) => {
-    write(`maps/${scene.map}.conf`, {
-      world: path.join(WS, "worlds", scene.scene),
+  for (const map of maps) {
+    const [x, z] = startPos(map);
+    write(`maps/${mapId(map)}.conf`, {
+      world: path.join(WORLDS, map.scene),
       loader: "gtnh:anvil_1_7",
       dimension: "minecraft:overworld",
-      name: scene.name,
-      sorting,
+      name: `${map.title} (${TEXTURE_NAMES[map.texture]})`,
+      sorting: MAPS.indexOf(map),
       storage: "file",
-      "start-pos": { x: scene.startPos[0], z: scene.startPos[1] },
+      "start-pos": { x, z },
       "sky-color": "#7dabff",
       "ambient-light": 0.1,
       "remove-caves-below-y": 55,
       "cave-detection-ocean-floor": -5,
     });
-  });
-  for (const jar of [...jars.addons, PACK]) fs.copyFileSync(jar, path.join(config, "packs", path.basename(jar)));
+  }
+  for (const jar of [...jars.addons, ...texturePacks(texture)]) {
+    fs.copyFileSync(jar, path.join(config, "packs", path.basename(jar)));
+  }
   return config;
 }
 
@@ -257,9 +408,9 @@ function seedDownloads(): void {
   }
 }
 
-function render(cli: string, config: string): void {
-  const logFile = path.join(WORK, "bluemap.log");
-  log(`rendering (log ${path.relative(WS, logFile)})`);
+function render(cli: string, config: string, texture: Texture): void {
+  const logFile = path.join(WORK, `bluemap-${texture}.log`);
+  log(`rendering the ${TEXTURE_NAMES[texture]} maps (log ${path.relative(WS, logFile)})`);
   const started = performance.now();
   const out = fs.openSync(logFile, "w");
   const result = spawnSync(java(), ["-jar", cli, "-c", config, "-v", "1.7.10", "-r", "-f", "-g"], {
@@ -341,23 +492,31 @@ const BOOTSTRAP = (app: string): string => `<script type="module">
       controlled().catch((error) => console.warn("demo service worker unavailable", error)).then(start);
     </script>`;
 
-function finishWebroot(scenes: Scene[]): void {
+// Patches the webapp's settings.json (BlueMap writes it on every render pass).
+function updateSettings(patch: Record<string, unknown>): void {
+  const file = path.join(DEMO, "settings.json");
+  fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, "utf8")), ...patch }));
+}
+
+function finishWebroot(maps: DemoMap[]): void {
   // not needed (or not usable) on a static host
   fs.rmSync(path.join(DEMO, "sql.php"), { force: true });
   for (const file of walk(path.join(DEMO, "assets")).filter((f) => f.endsWith(".map"))) fs.rmSync(file);
-  for (const scene of scenes) {
-    const mapDir = path.join(DEMO, "maps", scene.map);
+  for (const map of maps) {
+    const mapDir = path.join(DEMO, "maps", mapId(map));
     fs.rmSync(path.join(mapDir, "rstate"), { recursive: true, force: true }); // incremental render state
     const live = path.join(mapDir, "live");
     fs.mkdirSync(live, { recursive: true });
     if (!fs.existsSync(path.join(live, "markers.json"))) fs.writeFileSync(path.join(live, "markers.json"), "{}");
     if (!fs.existsSync(path.join(live, "players.json"))) fs.writeFileSync(path.join(live, "players.json"), '{"players":[]}');
   }
-  // maps of earlier runs with other scene selections
-  const keep = new Set(scenes.map((s) => s.map));
+  // maps of earlier runs with other map selections
+  const keep = new Set(maps.map(mapId));
   for (const entry of fs.readdirSync(path.join(DEMO, "maps"))) {
     if (!keep.has(entry)) fs.rmSync(path.join(DEMO, "maps", entry), { recursive: true, force: true });
   }
+  // every render pass wrote settings.json with its own maps only
+  updateSettings({ maps: maps.map(mapId) });
 
   const tiles = walk(path.join(DEMO, "maps"))
     .map((f) => path.relative(DEMO, f).split(path.sep).join("/"))
@@ -422,7 +581,154 @@ const SETTLED = `(mapId) => {
   return [map.hiresTileManager, ...map.lowresTileManager].every((m) => !m.unloaded && m.currentlyLoading === 0);
 }`;
 
-async function gallery(scenes: Scene[]): Promise<void> {
+// ---- aiming (the webapp's ControlsManager, MapControls and MapHeightControls) ----
+
+type Vec = [number, number, number];
+const VIEWPORT = { width: 1600, height: 900 };
+const FOV = (75 * Math.PI) / 180; // vertical, MapViewer's CombinedCamera
+const dot = (a: Vec, b: Vec): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cross = (a: Vec, b: Vec): Vec => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+// The parts of BlueMap's webapp state (`window.bluemap`) the aiming reads.
+declare global {
+  interface Window {
+    bluemap?: {
+      mapViewer?: {
+        map?: { terrainHeightAt(x: number, z: number): number | false };
+        controlsManager?: { position: { y: number } };
+      };
+    };
+  }
+}
+
+// The camera looks along this direction at the target, from `distance` before it.
+function lookDirection(rotation: number, angle: number): Vec {
+  return [Math.sin(rotation) * Math.sin(angle), -Math.cos(angle), -Math.cos(rotation) * Math.sin(angle)];
+}
+
+// The smallest distance at which all corners of `box` are inside the view, looking at `target`.
+function fitDistance(target: Vec, aim: Aim): number {
+  const forward = lookDirection(aim.rotation, aim.angle);
+  const side = cross(forward, [0, 1, 0]);
+  const right: Vec = [side[0] / Math.hypot(...side), 0, side[2] / Math.hypot(...side)];
+  const up = cross(right, forward);
+  const tanV = Math.tan(FOV / 2) * aim.margin;
+  const tanH = tanV * (VIEWPORT.width / VIEWPORT.height);
+  const [x1, y1, z1, x2, y2, z2] = aim.box;
+  let distance = 5; // the webapp's minimum zoom distance
+  for (const x of [x1, x2 + 1]) {
+    for (const y of [y1, y2 + 1]) {
+      for (const z of [z1, z2 + 1]) {
+        const p: Vec = [x - target[0], y - target[1], z - target[2]];
+        const depth = dot(p, forward);
+        distance = Math.max(distance, Math.abs(dot(p, right)) / tanH - depth, Math.abs(dot(p, up)) / tanV - depth);
+      }
+    }
+  }
+  return distance;
+}
+
+const centreOf = (box: Box): Vec => [(box[0] + box[3] + 1) / 2, (box[1] + box[4] + 1) / 2, (box[2] + box[5] + 1) / 2];
+
+// A perspective camera on `target`, pulled back until the box fits.
+function perspective(map: string, target: Vec, view: Aim): string {
+  const values = [...target, fitDistance(target, view)].map((v) => v.toFixed(2));
+  return `${map}:${values.join(":")}:${view.rotation}:${view.angle}:0:0:perspective`;
+}
+
+// In perspective view the webapp ignores the hash's y: the target sits at the terrain height under it plus 3, lowered
+// towards 0 as the distance grows to 500 (MapHeightControls). To keep the box in the middle of the view, the target is
+// the point on the line of sight through the box centre whose height best matches that rule, from terrain heights
+// sampled along it in the loaded map.
+async function aimTarget(page: Page, view: Aim): Promise<Vec> {
+  const [x1, y1, z1, x2, y2, z2] = view.box;
+  const centre = centreOf(view.box);
+  const forward = lookDirection(view.rotation, view.angle);
+  const reach = Math.hypot(x2 - x1, y2 - y1, z2 - z1) / 2 + 8;
+  const steps = Array.from({ length: Math.ceil(reach) * 4 + 1 }, (_, i) => i / 2 - reach);
+  const heights = await page.evaluate(
+    (points) => points.map(([x, z]) => window.bluemap?.mapViewer?.map?.terrainHeightAt(x, z) ?? false),
+    steps.map((t): [number, number] => [centre[0] + t * forward[0], centre[2] + t * forward[2]]),
+  );
+  let target = centre;
+  for (let round = 0; round < 5; round++) {
+    const lowered = 1 - Math.min(fitDistance(target, view) / 500, 1);
+    let best = { error: Infinity, t: 0, y: centre[1] };
+    steps.forEach((t, i) => {
+      const terrain = heights[i];
+      if (terrain === false) return;
+      const y = (terrain + 3) * lowered;
+      const error = Math.abs(centre[1] + t * forward[1] - y) + Math.abs(t) * 1e-3;
+      if (error < best.error) best = { error, t, y };
+    });
+    target = [centre[0] + best.t * forward[0], best.y, centre[2] + best.t * forward[2]];
+  }
+  return target;
+}
+
+interface Shot {
+  file: string;
+  title: string;
+  caption: string;
+  hash: string;
+  map: string;
+  texture: Texture;
+  group: "endgame" | "gallery";
+  width: number;
+  height: number;
+}
+
+interface Comparison {
+  key: string;
+  title: string;
+  caption: string;
+  hash: string; // of the Modernity shot
+  modernity: string;
+  default: string;
+  width: number;
+  height: number;
+}
+
+async function settle(page: Page, map: string): Promise<void> {
+  const ready = `(${SETTLED})(${JSON.stringify(map)})`;
+  await page.waitForFunction(ready, undefined, { timeout: 180_000, polling: 250 });
+  // let the height controls and the last tiles settle, then a few more frames
+  await page.waitForTimeout(2500);
+  await page.waitForFunction(ready, undefined, { timeout: 60_000 });
+}
+
+async function go(page: Page, hash: string): Promise<void> {
+  await page.evaluate((h) => {
+    window.location.hash = h;
+  }, hash);
+}
+
+// The height of the orbit target the webapp settled on (the height controls set it in perspective view).
+async function targetY(page: Page): Promise<number> {
+  return page.evaluate(() => window.bluemap?.mapViewer?.controlsManager?.position.y ?? NaN);
+}
+
+// the webapp's WebGL canvas keeps its drawing buffer, so it can be copied (downscaled) into a JPEG
+async function capture(page: Page, file: string): Promise<{ width: number; height: number }> {
+  const shot = await page.evaluate(() => {
+    const source = document.querySelector<HTMLCanvasElement>("#map-container canvas");
+    if (!source) throw new Error("no map canvas");
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = Math.round((source.height / source.width) * 1200);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no 2d context");
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    return { dataUrl: canvas.toDataURL("image/jpeg", 0.82), width: canvas.width, height: canvas.height };
+  });
+  const jpeg = Buffer.from(shot.dataUrl.split(",", 2)[1], "base64");
+  fs.writeFileSync(path.join(GALLERY, file), jpeg);
+  log(`gallery ${file} (${(jpeg.length / 1024).toFixed(0)} KiB)`);
+  return { width: shot.width, height: shot.height };
+}
+
+async function gallery(maps: DemoMap[]): Promise<void> {
   fs.rmSync(GALLERY, { recursive: true, force: true });
   fs.mkdirSync(GALLERY, { recursive: true });
   const server = await serve(DEMO);
@@ -430,44 +736,90 @@ async function gallery(scenes: Scene[]): Promise<void> {
   const browser = await chromium.launch({
     args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
   });
-  const entries: (View & { map: string; width: number; height: number })[] = [];
+  const shots: Shot[] = [];
+  const comparisons: Comparison[] = [];
   const problems: string[] = [];
+  let start: string | undefined;
+  const settled = new Map<string, number>(); // file -> camera target y the webapp settled on
+  const open = async (label: string, hash: string): Promise<Page> => {
+    const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 });
+    const page = await context.newPage();
+    page.on("response", (response) => {
+      if (response.status() >= 400) problems.push(`${label}: HTTP ${response.status()} ${response.url()}`);
+    });
+    page.on("pageerror", (error) => problems.push(`${label}: ${error.message}`));
+    await page.goto(`${server.url}index.html#${hash}`);
+    return page;
+  };
   try {
-    for (const scene of scenes) {
-      for (const view of scene.views) {
-        const context = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
-        const page = await context.newPage();
-        page.on("response", (response) => {
-          if (response.status() >= 400) problems.push(`${view.file}: HTTP ${response.status()} ${response.url()}`);
-        });
-        page.on("pageerror", (error) => problems.push(`${view.file}: ${error.message}`));
-        await page.goto(`${server.url}index.html#${view.hash}`);
-        await page.waitForFunction(`(${SETTLED})(${JSON.stringify(scene.map)})`, undefined, {
-          timeout: 180_000,
-          polling: 250,
-        });
-        // let the height controls and the last tiles settle, then a few more frames
-        await page.waitForTimeout(2500);
-        await page.waitForFunction(`(${SETTLED})(${JSON.stringify(scene.map)})`, undefined, { timeout: 60_000 });
-        // the webapp's WebGL canvas keeps its drawing buffer, so it can be copied (downscaled) into a JPEG
-        const shot = await page.evaluate(() => {
-          const source = document.querySelector<HTMLCanvasElement>("#map-container canvas");
-          if (!source) throw new Error("no map canvas");
-          const canvas = document.createElement("canvas");
-          canvas.width = 1200;
-          canvas.height = Math.round((source.height / source.width) * 1200);
-          const ctx = canvas.getContext("2d");
-          if (!ctx) throw new Error("no 2d context");
-          ctx.imageSmoothingQuality = "high";
-          ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-          return { dataUrl: canvas.toDataURL("image/jpeg", 0.82), width: canvas.width, height: canvas.height };
-        });
-        const jpeg = Buffer.from(shot.dataUrl.split(",", 2)[1], "base64");
-        fs.writeFileSync(path.join(GALLERY, view.file), jpeg);
-        entries.push({ ...view, map: scene.map, width: shot.width, height: shot.height });
-        log(`gallery ${view.file} (${(jpeg.length / 1024).toFixed(0)} KiB)`);
-        await context.close();
+    for (const map of maps) {
+      const id = mapId(map);
+      const views = [...map.views, ...(map.machines ? machineViews(map.scene) : [])];
+      if (views.length === 0) continue;
+      const page = await open(id, views[0].camera ? `${id}:${views[0].camera}` : id);
+      for (const view of views) {
+        let hash = `${id}:${view.camera}`;
+        if (view.aim) {
+          // load the tiles around the box first: the target height comes from them
+          await go(page, perspective(id, centreOf(view.aim.box), view.aim));
+          await settle(page, id);
+          let target = await aimTarget(page, view.aim);
+          for (let attempt = 1; ; attempt++) {
+            hash = perspective(id, target, view.aim);
+            await go(page, hash);
+            await settle(page, id);
+            const y = await targetY(page);
+            if (Math.abs(y - target[1]) <= 1) break;
+            if (attempt === 3 || Number.isNaN(y)) {
+              problems.push(`${view.file}: the camera target settled at y ${y.toFixed(1)}, not ${target[1].toFixed(1)}`);
+              break;
+            }
+            // the height controls also keep the camera above the terrain under it: refit around where it settled
+            target = [target[0], y, target[2]];
+          }
+        } else {
+          await go(page, hash);
+          await settle(page, id);
+        }
+        settled.set(view.file, await targetY(page));
+        const size = await capture(page, view.file);
+        const group = map.machines ? "endgame" : "gallery";
+        shots.push({ ...view, hash, map: id, texture: map.texture, group, ...size });
+        if (map.machines && !start) start = hash; // the overview opens the live map
       }
+      await page.context().close();
+    }
+
+    // Modernity vs default: the same camera on the default-texture end-game map
+    const other = maps.find((m) => m.scene === "endgame" && m.texture === "default");
+    if (other) {
+      const id = mapId(other);
+      const page = await open(id, id);
+      for (const key of COMPARE) {
+        const modernity = shots.find((s) => s.group === "endgame" && s.file === `endgame-${key}.jpg`);
+        if (!modernity) continue;
+        const hash = modernity.hash.replace(/^[^:]+/, id);
+        await go(page, hash);
+        await settle(page, id);
+        // both shots must come from the same camera, or the slider does not line up; Modernity's models may differ a
+        // little where the height controls look, a fraction of a block moves the view by about a pixel
+        const y = await targetY(page);
+        if (!(Math.abs(y - (settled.get(modernity.file) ?? NaN)) <= 1)) {
+          problems.push(`compare ${key}: camera target y ${y}, ${settled.get(modernity.file)} on the Modernity map`);
+        }
+        const file = `endgame-${key}-default.jpg`;
+        const size = await capture(page, file);
+        comparisons.push({
+          key,
+          title: modernity.title,
+          caption: modernity.caption,
+          hash: modernity.hash,
+          modernity: modernity.file,
+          default: file,
+          ...size,
+        });
+      }
+      await page.context().close();
     }
   } finally {
     await browser.close();
@@ -475,9 +827,11 @@ async function gallery(scenes: Scene[]): Promise<void> {
   }
   fs.writeFileSync(
     path.join(GALLERY, "gallery.json"),
-    JSON.stringify({ generated: new Date().toISOString(), images: entries }, null, 2),
+    JSON.stringify({ generated: new Date().toISOString(), start, images: shots, compare: comparisons }, null, 2),
   );
-  if (problems.length > 0) fail(`failed requests or page errors while taking screenshots:\n${problems.join("\n")}`);
+  // the live map opens on the plaza overview
+  if (start) updateSettings({ startLocation: start });
+  if (problems.length > 0) fail(`failed requests, page errors or misaimed cameras:\n${problems.join("\n")}`);
 }
 
 function size(dir: string): number {
@@ -485,14 +839,13 @@ function size(dir: string): number {
 }
 
 async function main(): Promise<void> {
-  const scenes = selectedScenes();
+  const maps = selectedMaps();
   if (!args["skip-render"]) {
     const repo = path.join(WS, "BlueMap");
     if (!fs.existsSync(path.join(repo, "settings.gradle.kts"))) fail(`BlueMap checkout not found at ${repo}`);
-    if (!fs.existsSync(PACK)) fail(`exported resource pack missing: ${PACK} (see the exporter guide)`);
-    for (const scene of scenes) {
-      if (!fs.existsSync(path.join(WS, "worlds", scene.scene, "level.dat"))) {
-        fail(`scene world missing: worlds/${scene.scene} (cd orchestrator && uv run orch scene ${scene.scene})`);
+    for (const map of maps) {
+      if (!fs.existsSync(path.join(WORLDS, map.scene, "level.dat"))) {
+        fail(`scene world missing: ${path.relative(WS, WORLDS)}/${map.scene} (cd orchestrator && ${ORCH_SCENE} ${map.scene})`);
       }
     }
     if (args.build) buildJars(repo);
@@ -502,15 +855,25 @@ async function main(): Promise<void> {
     fs.rmSync(DEMO, { recursive: true, force: true });
     fs.mkdirSync(WORK, { recursive: true });
     seedDownloads();
-    const config = writeConfig(scenes, jars, threads);
-    render(jars.cli, config);
-    finishWebroot(scenes);
+    for (const texture of [...new Set(maps.map((m) => m.texture))]) {
+      const config = writeConfig(
+        maps.filter((m) => m.texture === texture),
+        texture,
+        jars,
+        threads,
+      );
+      render(jars.cli, config, texture);
+    }
+    finishWebroot(maps);
   } else if (!fs.existsSync(path.join(DEMO, "settings.json"))) {
     fail("public/demo has not been rendered yet; run `pnpm demo` without --skip-render");
   }
-  await gallery(scenes);
+  await gallery(maps);
   for (const dir of [DEMO, GALLERY]) {
     log(`${path.relative(SITE, dir)}: ${(size(dir) / 1024 / 1024).toFixed(1)} MiB`);
+  }
+  for (const map of maps) {
+    log(`maps/${mapId(map)}: ${(size(path.join(DEMO, "maps", mapId(map))) / 1024 / 1024).toFixed(1)} MiB`);
   }
 }
 

@@ -34,18 +34,21 @@ mise install java@temurin-25.0.5+8.0.LTS java@zulu-8.98.0.107
 ## Workspace layout
 
 Each tool finds the workspace as the parent of its own repository root; set `BMGTNH_WORKSPACE` to override. Local
-state lives in ignored folders at the workspace root and is never committed:
+state lives in ignored folders at the workspace root and is never committed. Folders that depend on the GTNH pack
+version end in `-<version>` (`worlds-2.9.0/`, `out/exporter-2.9.0/`, `clients/gtnh-2.9.0`); 2.9.0-RC-2, the first
+version tested, keeps the unversioned ones (`worlds/`, `out/exporter/`; its client and server are
+`gtnh-2.9.0-RC-2`):
 
 ```text
 BlueMap-GTNH/                 # the workspace (umbrella checkout)
 ├── BlueMap/  gtnh-exporter/  modernity/  harness/  orchestrator/  e2e/   # submodules
 ├── site/                     # this documentation site
-├── servers/<server>/         # unpacked GTNH server packs (+ .rcon-password)
-├── clients/<client>/         # unpacked GTNH clients for exports
-├── downloads/                # pack zips, addon jars, Mojang/Forge library cache
-├── worlds/<scene>/           # scene world snapshots
-├── out/                      # build and test outputs: exporter/, scenes/, e2e/, ...
-├── baselines/<scene>/        # e2e baselines, local only
+├── servers/<server>/         # unpacked GTNH server packs (+ .rcon-password): gtnh-2.9.0, gtnh-2.9.0-RC-2, ...
+├── clients/<client>/         # unpacked GTNH clients for exports: gtnh-2.9.0, gtnh-2.9.0-RC-2, ...
+├── downloads/                # pack zips (gtnh-packs.json: URLs, sha256), addon jars, Mojang/Forge library cache
+├── worlds-2.9.0/<scene>/     # scene world snapshots (2.9.0-RC-2: worlds/)
+├── out/                      # build and test outputs: exporter-2.9.0/, scenes-2.9.0/, e2e-2.9.0/, ...
+├── baselines-2.9.0/<scene>/  # e2e baselines, local only (2.9.0-RC-2: baselines/)
 └── sources/                  # reference checkouts
 ```
 
@@ -53,7 +56,8 @@ BlueMap-GTNH/                 # the workspace (umbrella checkout)
 |---|---|
 | `BMGTNH_WORKSPACE` | workspace root (default: parent of the tool's repository) |
 | `BMGTNH_JAVA` | Java binary for the BlueMap CLI in `e2e` and the site demo (default: `mise where java@temurin-25.0.5+8.0.LTS`) |
-| `BMGTNH_BASELINES` | e2e baseline folder (default: `<workspace>/baselines`) |
+| `BMGTNH_PACK_VERSION` | GTNH pack version the tools use when not given `--pack-version` (default: `2.9.0`; also `2.9.0-RC-2`) |
+| `BMGTNH_BASELINES` | e2e baseline folder (default: the pack version's `<workspace>/baselines[-<version>]`) |
 
 ## Conventions
 

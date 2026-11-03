@@ -1,57 +1,49 @@
 # Community addons
 
-Six community addons for GTNH 2.9.0-RC-2 load, export and render, including their formed multiblocks and the key
-special renderers. They were tested together on one server, without changes to the addons' code.
+Five community addons for GT New Horizons 2.9.0 load, export and render, including their formed multiblocks and the
+key special renderers. They were tested together on one 2.9.0 server, without changes to the addons' code.
 
 | Addon | Version | Rendered |
 |---|---|---|
-| [Twist Space Technology](https://github.com/Nxer/Twist-Space-Technology-Mod) (TST) | 0.8.0-RC2.9 | blocks, machines, multiblocks; special renderers: artificial star, laser beacon / meteor miner beam, Eye of Wood, power chair, arcane hole |
-| [Programmable Hatches](https://github.com/reobf/Programmable-Hatches-Mod) (PH) | 0.2.0p28 | blocks and machines |
-| [GT: Not Leisure](https://github.com/ABKQPO/GT-Not-Leisure) (GTNL) | 0.2.7-rc2 | blocks, machines, multiblocks; special renderers: beam former, multi essentia jar, water candle, player doll, fumo, ender elevator |
-| [123Technology](https://github.com/CallmeSHaobe/123Technology) | 2.2.0 | blocks and machines; rocket, assembler and three figure renderers |
+| [Twist Space Technology](https://github.com/Nxer/Twist-Space-Technology-Mod) (TST) | 0.8.0 | blocks, machines, multiblocks; special renderers: artificial star, laser beacon / meteor miner beam, Eye of Wood, power chair, arcane hole |
+| [Programmable Hatches](https://github.com/reobf/Programmable-Hatches-Mod) (PH) | 0.2.1p2 | blocks and machines |
+| [GT: Not Leisure](https://github.com/GTNotLeisure/GT-Not-Leisure) (GTNL) | 0.2.7-rc2.1, with [GTNLLib](https://github.com/GTNotLeisure/GTNLLib) 1.1.3 | blocks, machines, multiblocks; special renderers: beam former, multi essentia jar, water candle, player doll, fumo, ender elevator |
 | [NH Utilities](https://github.com/Keriils/NH-Utilities) | 1.7.0 | blocks |
 | [Box++](https://github.com/luomolhx/BoxPlusPlus) (community fork) | 2.2.0.0 | blocks, machines; the ring renderer |
 
 Animated effects (halos, beams) are drawn frozen at their first frame, and beams are opaque.
 
-## Two configuration changes
+- **GT: Not Leisure needs GTNLLib.** GTNLLib is a library mod split out of GTNL; GTNL 0.2.7-rc2.1 does not load
+  without it. Install `gtnllib-1.1.3.jar` next to the GTNL jar on the server and on the exporting client.
+- **[123Technology](https://github.com/CallmeSHaobe/123Technology) is not supported** until an upstream release for
+  2.9.0 exists. Its newest release, 2.2.0.1, is built for 2.9.0-RC-2 and stops a 2.9.0 server while loading
+  (`NoSuchFieldError: tectech.util.CommonValues.TEC_MARK_EM`); the fix is on its main branch but not released yet.
+  The port's 123Technology renderers (rocket, assembler, three figures) stay in place for that release.
 
-On 2.9.0-RC-2 the addons need two settings, on **both the server and the exporting client**:
+## One configuration change
 
-::: code-group
+The addons need one setting, on **both the server and the exporting client**:
 
 ```properties [config/GregTech/GregTech.cfg]
-# Twist Space Technology 0.8.0-RC2.9 builds a recipe from the empty ore dictionary
-# entry craftingBlastFurnace and crashes the game on start otherwise.
+# Twist Space Technology 0.8.0 builds a recipe from the empty ore dictionary
+# entry craftingBlastFurnace and stops the game while loading otherwise.
 B:crashOnNullRecipeInput=false
 ```
 
-```properties [config/GTNotLeisure/GTNotLeisure.cfg]
-# GTNL 0.2.7-rc2's mixin into TST's GTCM_ParallelHelper fails against TST RC2.9,
-# so no TST multiblock can form otherwise.
-B:enableRecipeOutputChance=false
-```
-
-:::
-
-The first change only stops a crash. The second one **turns off a GTNL gameplay feature** (recipe output chance);
-decide whether you want that on your server.
+It only stops a crash. GT: Not Leisure needs no change: its recipe output chance (`enableRecipeOutputChance` in
+`config/GTNotLeisure/machine.cfg`) works together with TST 0.8.0 and can stay on.
 
 > [!NOTE]
-> The exact layout of the lines in the two `.cfg` files is Forge's configuration format: find the existing
-> `crashOnNullRecipeInput` and `enableRecipeOutputChance` entries and change their value to `false`.
+> The exact layout of the lines in the `.cfg` file is Forge's configuration format: find the existing
+> `crashOnNullRecipeInput` entry and change its value to `false`.
 
 ## Export with the addons
 
 The exported pack has to come from a client with the same addons, so their blocks and GregTech machine textures are
-in it. With the launcher, use a separate client directory and pass the addon jars with `--extra-mod`; see
-[export the resource pack](/guide/export#route-1-the-launcher-tested-on-macos-arm64). The result is
-`bluemap-gtnh-resources-2.9.0-RC-2-addons.zip`; install it instead of the plain pack.
+in it. With the launcher, use a separate client directory and pass the addon jars, GTNLLib included, with
+`--extra-mod`; see [export the resource pack](/guide/export#route-1-the-launcher-tested-on-macos-arm64). The result is
+`bluemap-gtnh-resources-2.9.0-addons.zip`; install it instead of the plain pack.
 
 ## Known addon problems
 
-- **GT: Not Leisure machine 21153** (Eye of Harmony module, `ETGWEyeOfHarmonyModule`) crashes the server on
-  2.9.0-RC-2 within one tick of being placed. This is a GTNL bug, unrelated to this mod.
-- A GTNL machine shows about 1% missing texture in our tests because GTNL's texture folder has the wrong case; it
-  looks the same in game.
 - TST's large solar boiler and GTNL's multi essentia pipe have no dedicated renderer.

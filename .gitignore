@@ -4,8 +4,10 @@
 /downloads/
 /out/
 /worlds/
+/worlds-*/
 /sources/
 /baselines/
+/baselines-*/
 
 # OS and editor junk
 .DS_Store
