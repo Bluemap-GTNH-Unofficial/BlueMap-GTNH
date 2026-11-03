@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Runs a Gradle build of the workspace the way every build here needs it: `./gradlew` of the current directory on
+# Java 25 from mise, with the Java 8 (Zulu, the GTNHGradle toolchain for 1.7.10) and Java 25 installations offered to
+# Gradle's toolchain resolution. Used for the BlueMap fork and the three GTNHGradle mods (server mod, exporter,
+# harness), which all share the default Gradle user home (~/.gradle, or $GRADLE_USER_HOME): one dependency cache, one
+# RetroFuturaGradle decompilation cache and one local build cache.
+#
+#   cd harness && ../pipeline/gradlew build
+set -euo pipefail
+
+JAVA25=temurin-25.0.5+8.0.LTS
+JAVA8=zulu-8.98.0.107
+
+home() { # JAVA_HOME of a mise Java install (macOS keeps it in Contents/Home)
+  local dir
+  dir=$(mise where "java@$1")
+  if [[ -d "$dir/Contents/Home" ]]; then echo "$dir/Contents/Home"; else echo "$dir"; fi
+}
+
+exec mise exec "java@$JAVA25" -- ./gradlew \
+  "-Porg.gradle.java.installations.paths=$(home "$JAVA8"),$(home "$JAVA25")" "$@"

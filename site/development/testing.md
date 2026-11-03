@@ -5,6 +5,10 @@ Every layer has its own check. What each check proves, and what it does not, is 
 
 ## Unit tests
 
+From the workspace root, `mise run test` runs every suite below (each one is skipped while its sources are unchanged
+since it last passed), `mise run test:<suite>` one of them and `mise run check` only those the current changes need;
+see [the pipeline](/development/building#pipeline).
+
 ::: code-group
 
 ```sh [BlueMap fork]

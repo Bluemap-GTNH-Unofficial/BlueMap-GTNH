@@ -1,0 +1,110 @@
+# The real-client oracle (e2e). References come from e2e's content-addressed cache (out/oracle-ref/); only a cache
+# miss starts a client (`gtnh-client cameras --jobs`, one client run per variant). Sources: the BlueMap jars, e2e's
+# oracle code and scene definitions, the launcher's capture version, the variant's client mods and packs and the
+# scene dumps and worlds. Exports and scenes are ordered with wait_for, not depends, so running one oracle task never
+# starts an export; `mise run all` runs them first.
+
+["oracle:default"]
+description = "World oracle, variant default (default client, BlueMap with the default export): vanilla-zoo, gtnh-zoo, gt-machines, gt-pipes, gt-ores, gt-multiblocks, mod-renderers -> out/oracle-2.9.0/default/worlds/"
+depends = ["build-fork"]
+wait_for = ["export:default", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:mod-renderers"]
+run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/default/worlds/summary.json -- uv run --directory e2e e2e oracle world --variant default --all --no-build"
+sources = [
+  "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
+  "BlueMap/gtnh-render/build/libs/gtnh-render-*-addon.jar",
+  "e2e/src/**", "!e2e/**/__pycache__/**", "e2e/scenes/*.yaml", "e2e/oracle/**", "e2e/pyproject.toml", "e2e/uv.lock",
+  "gtnh-exporter/launcher/src/gtnh_client/cameras.py",
+  "clients/gtnh-2.9.0/.minecraft/mods/**", "!clients/gtnh-2.9.0/.minecraft/mods/bluemap-gtnh-exporter*.jar",
+  "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
+  "out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo/level.dat", "worlds-2.9.0/vanilla-zoo/**/*.mca",
+  "out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level.dat", "worlds-2.9.0/gtnh-zoo/**/*.mca",
+  "out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-machines/**/*.mca",
+  "out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gt-pipes/**/*.mca",
+  "out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-ores/**/*.mca",
+  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/**/*.mca",
+  "out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/mod-renderers/**/*.mca",
+]
+outputs = ["out/oracle-2.9.0/default/worlds/summary.json"]
+
+["oracle:modernity"]
+description = "World oracle, variant modernity (Modernity client, BlueMap with the default export and both Modernity packs): vanilla-zoo, gtnh-zoo, gt-machines, gt-pipes, gt-ores, gt-multiblocks, mod-renderers -> out/oracle-2.9.0/modernity/worlds/"
+depends = ["build-fork"]
+wait_for = ["export:default", "export:modernity", "export:modernity-vanilla", "oracle:default", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:mod-renderers"]
+run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/modernity/worlds/summary.json -- uv run --directory e2e e2e oracle world --variant modernity --all --no-build"
+sources = [
+  "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
+  "BlueMap/gtnh-render/build/libs/gtnh-render-*-addon.jar",
+  "e2e/src/**", "!e2e/**/__pycache__/**", "e2e/scenes/*.yaml", "e2e/oracle/**", "e2e/pyproject.toml", "e2e/uv.lock",
+  "gtnh-exporter/launcher/src/gtnh_client/cameras.py",
+  "clients/gtnh-modernity-2.9.0/.minecraft/mods/**", "!clients/gtnh-modernity-2.9.0/.minecraft/mods/bluemap-gtnh-exporter*.jar",
+  "downloads/modernity/release.json",
+  "downloads/modernity/Modernity-*.zip",
+  "downloads/modernity/MyCTMLib-*.jar",
+  "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
+  "out/modernity/modernity-*-modded-2.9.0.zip",
+  "out/modernity/modernity-*-vanilla-1.13.zip",
+  "out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo/level.dat", "worlds-2.9.0/vanilla-zoo/**/*.mca",
+  "out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level.dat", "worlds-2.9.0/gtnh-zoo/**/*.mca",
+  "out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-machines/**/*.mca",
+  "out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gt-pipes/**/*.mca",
+  "out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-ores/**/*.mca",
+  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/**/*.mca",
+  "out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/mod-renderers/**/*.mca",
+]
+outputs = ["out/oracle-2.9.0/modernity/worlds/summary.json"]
+
+["oracle:addons"]
+description = "World oracle, variant addons (addon client, BlueMap with the addons export): addons-machines, addons-multiblocks -> out/oracle-2.9.0/addons/worlds/"
+depends = ["build-fork"]
+wait_for = ["export:addons", "oracle:default", "scene:addons-machines", "scene:addons-multiblocks"]
+run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/addons/worlds/summary.json -- uv run --directory e2e e2e oracle world --variant addons --all --no-build"
+sources = [
+  "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
+  "BlueMap/gtnh-render/build/libs/gtnh-render-*-addon.jar",
+  "e2e/src/**", "!e2e/**/__pycache__/**", "e2e/scenes/*.yaml", "e2e/oracle/**", "e2e/pyproject.toml", "e2e/uv.lock",
+  "gtnh-exporter/launcher/src/gtnh_client/cameras.py",
+  "clients/gtnh-addons-2.9.0/.minecraft/mods/**", "!clients/gtnh-addons-2.9.0/.minecraft/mods/bluemap-gtnh-exporter*.jar",
+  "downloads/addons/versions.json",
+  "downloads/addons/*.jar",
+  "out/exporter-addons-2.9.0/bluemap-gtnh-resources-2.9.0-addons.zip",
+  "out/scenes-2.9.0/addons-machines/dump.ndjson", "worlds-2.9.0/addons-machines/level.dat", "worlds-2.9.0/addons-machines/**/*.mca",
+  "out/scenes-2.9.0/addons-multiblocks/dump.ndjson", "worlds-2.9.0/addons-multiblocks/level.dat", "worlds-2.9.0/addons-multiblocks/**/*.mca",
+]
+outputs = ["out/oracle-2.9.0/addons/worlds/summary.json"]
+
+["oracle:states-default"]
+description = "Per-state oracle, variant default: every exported block state -> out/oracle-2.9.0/default/states/ (judged failures are results, not errors)"
+wait_for = ["export:default"]
+run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/default/states/report.json -- python3 pipeline/steps.py report out/oracle-2.9.0/default/states/report.json -- uv run --directory e2e e2e oracle states --variant default"
+sources = [
+  "BlueMap/oracle/src/main/**", "BlueMap/oracle/build.gradle.kts",
+  "BlueMap/gtnh-render/src/main/**", "BlueMap/legacy/src/main/**", "BlueMap/core/src/main/**",
+  "e2e/src/**", "!e2e/**/__pycache__/**", "e2e/scenes/*.yaml", "e2e/oracle/**", "e2e/pyproject.toml", "e2e/uv.lock",
+  "gtnh-exporter/launcher/src/gtnh_client/states.py",
+  "clients/gtnh-2.9.0/.minecraft/mods/**", "!clients/gtnh-2.9.0/.minecraft/mods/bluemap-gtnh-exporter*.jar",
+  "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
+]
+outputs = ["out/oracle-2.9.0/default/states/report.json"]
+
+["oracle:states-modernity"]
+description = "Per-state oracle, variant modernity: every exported block state -> out/oracle-2.9.0/modernity/states/ (judged failures are results, not errors)"
+wait_for = ["export:default", "export:modernity", "export:modernity-vanilla", "oracle:states-default"]
+run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/modernity/states/report.json -- python3 pipeline/steps.py report out/oracle-2.9.0/modernity/states/report.json -- uv run --directory e2e e2e oracle states --variant modernity"
+sources = [
+  "BlueMap/oracle/src/main/**", "BlueMap/oracle/build.gradle.kts",
+  "BlueMap/gtnh-render/src/main/**", "BlueMap/legacy/src/main/**", "BlueMap/core/src/main/**",
+  "e2e/src/**", "!e2e/**/__pycache__/**", "e2e/scenes/*.yaml", "e2e/oracle/**", "e2e/pyproject.toml", "e2e/uv.lock",
+  "gtnh-exporter/launcher/src/gtnh_client/states.py",
+  "clients/gtnh-modernity-2.9.0/.minecraft/mods/**", "!clients/gtnh-modernity-2.9.0/.minecraft/mods/bluemap-gtnh-exporter*.jar",
+  "downloads/modernity/release.json",
+  "downloads/modernity/Modernity-*.zip",
+  "downloads/modernity/MyCTMLib-*.jar",
+  "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
+  "out/modernity/modernity-*-modded-2.9.0.zip",
+  "out/modernity/modernity-*-vanilla-1.13.zip",
+]
+outputs = ["out/oracle-2.9.0/modernity/states/report.json"]
+
+["oracle"]
+description = "Every oracle run: world oracle for default, modernity and addons, state oracle for default and modernity"
+depends = ["oracle:default", "oracle:modernity", "oracle:addons", "oracle:states-default", "oracle:states-modernity"]

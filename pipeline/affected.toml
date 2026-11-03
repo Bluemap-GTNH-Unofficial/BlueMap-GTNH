@@ -1,0 +1,159 @@
+# Which checks a change needs (`mise run check`, pipeline/check.py).
+#
+# Every changed file (git diff of each repository against its upstream tracking branch, plus staged, unstaged and
+# untracked files) goes to the FIRST rule whose `paths` match it (workspace-relative, `**` crosses directories), so
+# put narrow rules before wide ones. The run is the union over all files:
+#   tasks   mise tasks to run (unit suites, builds); mise still skips one whose sources did not change
+#   scenes  e2e scene names: BlueMap side of the world oracle (cached client references, never a client) and the
+#           e2e regression views; "*" = every scene, "{stem}" = the changed file's name without its extension
+#   oracle  scenes for the world oracle only;  e2e  scenes for the e2e views only
+#   note    printed as a follow-up the check does not do itself (exports, scene rebuilds, reference captures)
+# A file no rule matches runs everything (every unit suite and every scene) and is reported, so add a rule for it.
+
+# ---------------------------------------------------------------- umbrella: site, pipeline, docs
+
+[[rule]]
+paths = ["site/**"]
+tasks = ["site"]
+
+[[rule]]
+paths = ["pipeline/**", "mise.toml"]
+tasks = ["test:pipeline"]
+
+[[rule]]  # documentation and repository metadata anywhere
+paths = ["**/*.md", "LICENSE", "*/LICENSE", ".gitignore", "**/.gitignore", ".gitmodules", ".github/**", "**/.java-version"]
+
+# ---------------------------------------------------------------- BlueMap fork: gtnh-render (GregTech and mod renderers)
+
+[[rule]]
+paths = [
+  "BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/chisel/**",
+  "BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/ctm/**",
+  "BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/ae2/**",
+  "BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/bibliocraft/**",
+  "BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/enderio/**",
+  "BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/ironchest/**",
+]
+tasks = ["test:gtnh-render"]
+scenes = ["mod-renderers", "gtnh-zoo"]
+
+[[rule]]
+paths = ["BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/mods/addons/**"]
+tasks = ["test:gtnh-render"]
+scenes = ["addons-zoo", "addons-machines", "addons-multiblocks", "addons-tesr"]
+
+[[rule]]
+paths = ["BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/gregtech/**"]
+tasks = ["test:gtnh-render"]
+scenes = [
+  "gt-machines", "gt-pipes", "gt-ores", "gt-multiblocks", "gtnh-zoo",
+  "addons-machines", "addons-multiblocks", "addons-tesr",
+]
+
+[[rule]]
+paths = ["BlueMap/gtnh-render/src/test/**"]
+tasks = ["test:gtnh-render"]
+
+[[rule]]
+paths = ["BlueMap/gtnh-render/**"]
+tasks = ["test:gtnh-render", "test:fork-oracle"]
+scenes = ["*"]
+
+# ---------------------------------------------------------------- BlueMap fork: world reader, core, webapp, CLI
+
+[[rule]]
+paths = ["BlueMap/legacy/src/test/**"]
+tasks = ["test:legacy"]
+
+[[rule]]
+paths = ["BlueMap/legacy/**"]
+tasks = ["test:legacy", "test:gtnh-render", "test:fork-oracle", "test:servermod", "verify"]
+scenes = ["*"]
+
+[[rule]]  # Gradle settings and the fork version: the jars, nothing rendered changes
+paths = ["BlueMap/gradle.properties"]
+tasks = ["build-fork", "build-servermod"]
+
+[[rule]]
+paths = [
+  "BlueMap/core/**", "BlueMap/common/src/**", "BlueMap/common/build.gradle.kts", "BlueMap/api/**",
+  "BlueMap/buildSrc/**", "BlueMap/*.gradle.kts", "BlueMap/gradle/**",
+]
+tasks = ["test:legacy", "test:gtnh-render", "test:fork-oracle", "test:servermod"]
+scenes = ["*"]
+
+[[rule]]
+paths = ["BlueMap/common/webapp/**", "BlueMap/implementations/cli/**"]
+scenes = ["*"]
+
+[[rule]]
+paths = ["BlueMap/implementations/gtnh/**"]
+tasks = ["test:servermod", "build-servermod"]
+
+[[rule]]
+paths = ["BlueMap/oracle/**"]
+tasks = ["test:fork-oracle"]
+note = "state oracle renderer changed: mise run oracle:states-default oracle:states-modernity"
+
+[[rule]]  # upstream platforms the port does not build, and repository metadata
+paths = ["BlueMap/implementations/**", "BlueMap/testing/**", "BlueMap/Dockerfile", "BlueMap/LICENSE_HEADER", "BlueMap/mise.toml"]
+
+# ---------------------------------------------------------------- exporter and launcher
+
+[[rule]]
+paths = ["gtnh-exporter/src/main/kotlin/de/bluecolored/bluemap/gtnh/exporter/oracle/**"]
+tasks = ["build-exporter"]
+note = "reference capture code changed: bump CAPTURE_VERSION in gtnh-exporter/launcher/src/gtnh_client/cameras.py (STATES_CAPTURE_VERSION in states.py) if captures differ, then mise run oracle"
+
+[[rule]]
+paths = ["gtnh-exporter/src/**", "gtnh-exporter/*.gradle*", "gtnh-exporter/gradle.properties", "gtnh-exporter/gradle/**"]
+tasks = ["build-exporter"]
+note = "exporter changed: the packs are stale; mise run export, then mise run oracle e2e"
+
+[[rule]]
+paths = ["gtnh-exporter/launcher/**"]
+tasks = ["test:launcher"]
+
+# ---------------------------------------------------------------- scenes: harness and orchestrator
+
+[[rule]]
+paths = ["harness/**"]
+tasks = ["build-harness"]
+note = "harness changed: scene worlds may be stale; mise run scenes verify"
+
+[[rule]]
+paths = ["orchestrator/tests/**"]
+tasks = ["test:orchestrator"]
+
+[[rule]]
+paths = ["orchestrator/**"]
+tasks = ["test:orchestrator"]
+note = "orchestrator changed: scene worlds may be stale; mise run scenes verify"
+
+# ---------------------------------------------------------------- e2e and the oracle
+
+[[rule]]
+paths = ["e2e/tests/**"]
+tasks = ["test:e2e"]
+
+[[rule]]
+paths = ["e2e/scenes/*.yaml"]
+tasks = ["test:e2e"]
+scenes = ["{stem}"]
+
+[[rule]]
+paths = ["e2e/src/e2e/oracle/**", "e2e/oracle/**"]
+tasks = ["test:e2e"]
+oracle = ["*"]
+
+[[rule]]
+paths = ["e2e/**"]
+tasks = ["test:e2e"]
+scenes = ["*"]
+
+# ---------------------------------------------------------------- Modernity packs
+
+[[rule]]
+paths = ["modernity/**"]
+tasks = ["test:modernity"]
+note = "modernity changed: the Modernity packs may be stale; mise run export:modernity-vanilla export:modernity"

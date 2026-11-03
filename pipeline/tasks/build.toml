@@ -1,0 +1,66 @@
+# Gradle builds. Each task lists the files its jar is built from (`sources`) and the jar (`outputs`); mise skips it
+# while both hash the same as after its last successful run. Gradle runs through pipeline/gradlew (Java 25, plus the
+# Java 8 toolchain the GTNHGradle mods need). All builds share ~/.gradle: dependency cache, the RetroFuturaGradle
+# decompiled-Minecraft cache and the local build cache (`org.gradle.caching = true` in each mod's gradle.properties).
+
+["build-fork"]
+description = "BlueMap fork: CLI shadow jar and the legacy + gtnh-render addon jars (used by e2e, the oracle and the site demo)"
+run = "cd BlueMap && ../pipeline/gradlew :cli:shadowJar :legacy:addonJar :gtnh-render:addonJar"
+sources = [
+  "BlueMap/api/src/main/**", "BlueMap/api/*.gradle.kts", "BlueMap/api/buildSrc/src/**", "BlueMap/api/buildSrc/*.gradle.kts",
+  "BlueMap/core/src/main/**", "BlueMap/core/build.gradle.kts",
+  "BlueMap/common/src/main/**", "BlueMap/common/build.gradle.kts",
+  "BlueMap/common/webapp/src/**", "BlueMap/common/webapp/public/**", "BlueMap/common/webapp/*.{html,js,json}",
+  "BlueMap/legacy/src/main/**", "BlueMap/legacy/build.gradle.kts",
+  "BlueMap/gtnh-render/src/main/**", "BlueMap/gtnh-render/build.gradle.kts",
+  "BlueMap/implementations/cli/src/main/**", "BlueMap/implementations/cli/build.gradle.kts",
+  "BlueMap/buildSrc/src/**", "BlueMap/buildSrc/*.gradle.kts",
+  "BlueMap/*.gradle.kts", "BlueMap/gradle.properties", "BlueMap/gradle/**",
+]
+outputs = [
+  "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar",
+  "BlueMap/legacy/build/libs/legacy-*-addon.jar",
+  "BlueMap/gtnh-render/build/libs/gtnh-render-*-addon.jar",
+]
+
+["build-servermod"]
+description = "Forge 1.7.10 server mod (BlueMap/implementations/gtnh, GTNHGradle; shades common, legacy and gtnh-render)"
+run = "cd BlueMap/implementations/gtnh && ../../../pipeline/gradlew build"
+sources = [
+  "BlueMap/implementations/gtnh/src/**", "BlueMap/implementations/gtnh/*.gradle*",
+  "BlueMap/implementations/gtnh/gradle.properties", "BlueMap/implementations/gtnh/gradle/**",
+  "BlueMap/api/src/main/**", "BlueMap/api/*.gradle.kts", "BlueMap/api/buildSrc/src/**", "BlueMap/api/buildSrc/*.gradle.kts",
+  "BlueMap/core/src/main/**", "BlueMap/core/build.gradle.kts",
+  "BlueMap/common/src/main/**", "BlueMap/common/build.gradle.kts",
+  "BlueMap/common/webapp/src/**", "BlueMap/common/webapp/public/**", "BlueMap/common/webapp/*.{html,js,json}",
+  "BlueMap/legacy/src/main/**", "BlueMap/legacy/build.gradle.kts",
+  "BlueMap/gtnh-render/src/main/**", "BlueMap/gtnh-render/build.gradle.kts",
+  "BlueMap/buildSrc/src/**", "BlueMap/buildSrc/*.gradle.kts",
+  "BlueMap/*.gradle.kts", "BlueMap/gradle.properties", "BlueMap/gradle/**",
+]
+outputs = ["BlueMap/implementations/gtnh/build/libs/bluemap-*.jar", "!BlueMap/implementations/gtnh/build/libs/*-{dev,sources}.jar"]
+
+["build-exporter"]
+description = "Exporter client mod (gtnh-exporter, GTNHGradle; compiles the fork's legacy ResourceKeys.kt in verbatim)"
+run = "cd gtnh-exporter && ../pipeline/gradlew build"
+sources = [
+  "gtnh-exporter/src/main/**", "gtnh-exporter/*.gradle*", "gtnh-exporter/gradle.properties", "gtnh-exporter/gradle/**",
+  "BlueMap/legacy/src/main/kotlin/de/bluecolored/bluemap/gtnh/legacy/ResourceKeys.kt",
+]
+outputs = ["gtnh-exporter/build/libs/bluemap-gtnh-exporter-*.jar", "!gtnh-exporter/build/libs/*-{dev,sources}.jar"]
+
+["build-harness"]
+description = "bmh harness server mod (harness, GTNHGradle), installed into the reference and addon servers' mods/"
+run = [
+  "cd harness && ../pipeline/gradlew build",
+  "python3 pipeline/steps.py install harness/build/libs bmh servers/gtnh-$BMGTNH_PACK_VERSION servers/gtnh-addons-$BMGTNH_PACK_VERSION",
+]
+sources = ["harness/src/main/**", "harness/*.gradle*", "harness/gradle.properties", "harness/gradle/**"]
+outputs = [
+  "harness/build/libs/bmh-*.jar", "!harness/build/libs/*-{dev,sources}.jar",
+  "servers/gtnh-2.9.0/mods/bmh-*.jar",
+]
+
+["build"]
+description = "All four Gradle builds"
+depends = ["build-fork", "build-servermod", "build-exporter", "build-harness"]

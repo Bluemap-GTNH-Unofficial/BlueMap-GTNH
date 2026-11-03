@@ -18,3 +18,4 @@ desktop.ini
 *~
 .idea/
 .vscode/
+__pycache__/

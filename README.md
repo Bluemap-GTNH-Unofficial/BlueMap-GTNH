@@ -71,6 +71,29 @@ next to each other (`git clone --recursive https://github.com/Bluemap-GTNH-Unoff
 | `orchestrator/` | [Bluemap-GTNH-Unofficial/orchestrator](https://github.com/Bluemap-GTNH-Unofficial/orchestrator) | Headless GTNH server lifecycle, RCON and deterministic test scenes. |
 | `e2e/` | [Bluemap-GTNH-Unofficial/e2e](https://github.com/Bluemap-GTNH-Unofficial/e2e) | The real-client oracle (BlueMap against the real GTNH client, per block state and per block face of scene worlds) and browser screenshot regression tests against local baselines. |
 
+## Development
+
+Every build and check of the workspace is a [mise](https://mise.jdx.dev/) task of the umbrella `mise.toml` (groups in
+`pipeline/tasks/`); each declares its inputs and outputs and is skipped while their content hashes match its last
+successful run. Prerequisites: mise (Java 25 and Zulu 8, see [workspace & toolchain](site/development/index.md)), uv
+and pnpm.
+
+```sh
+mise tasks                 # every task with what it does
+mise run all               # builds, unit suites, scenes, verify, exports, oracle, e2e, site demo, site
+mise run check             # only the unit suites and scene checks the current changes need
+mise run check --plan      # ... printed, not run
+mise run build-servermod   # one step (also build-fork, build-exporter, build-harness, test, e2e, oracle, ...)
+mise run adopt             # once per existing workspace: record the outputs already there as current
+```
+
+`check` maps each file changed against the upstream branches (plus uncommitted files) through
+`pipeline/affected.toml` to unit suites and scenes, and runs the affected scenes' BlueMap-side oracle (cached client
+references, no client) and e2e views. Tasks run one at a time, because exports and oracle captures start a GTNH
+client and scenes a GTNH server. The three GTNHGradle mods share one Gradle user home and its local build cache:
+Minecraft is decompiled once per machine, and a clean mod build takes its recompiled Minecraft and compiled modules
+from the cache. Details: [Building](site/development/building.md#pipeline).
+
 ## Licence
 
 MIT, except where [NOTICE.md](NOTICE.md) says otherwise: one function adapted from GT: Not Leisure (and two beam
