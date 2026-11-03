@@ -1,0 +1,72 @@
+# Builds the VitePress site (site/) and deploys it to GitHub Pages, with the live demo from the newest `demo-*`
+# pre-release (made with `pnpm demo:bundle` and `pnpm demo:publish`). Without a demo release the site builds without it.
+# The site includes only NOTICE.md from outside site/, so no submodules are checked out.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - NOTICE.md
+      - README.md
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # VitePress takes each page's last-updated date from git history
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+          cache-dependency-path: site/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Fetch the demo
+        run: pnpm demo:fetch
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: pnpm build
+        env:
+          SITE_BASE: /BlueMap-GTNH/
+      - name: Check Pages limits
+        run: |
+          bytes=$(du -sb .vitepress/dist | cut -f1)
+          files=$(find .vitepress/dist -type f | wc -l)
+          echo "site: $((bytes / 1048576)) MiB, $files files"
+          echo "Site: $((bytes / 1048576)) MiB, $files files" >> "$GITHUB_STEP_SUMMARY"
+          # Pages: published site and artifact at most 1 GB each
+          if [ "$bytes" -gt 1000000000 ]; then echo "::error::site is over the 1 GB Pages limit"; exit 1; fi
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

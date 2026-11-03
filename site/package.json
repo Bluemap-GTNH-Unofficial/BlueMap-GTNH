@@ -7,6 +7,9 @@
     "build": "vitepress build",
     "preview": "vitepress preview --port 4173",
     "demo": "node scripts/build-demo.ts",
+    "demo:bundle": "node scripts/bundle-demo.ts",
+    "demo:publish": "node scripts/bundle-demo.ts --publish",
+    "demo:fetch": "node scripts/fetch-demo.ts",
     "check": "node scripts/check-site.ts"
   },
   "devDependencies": {
