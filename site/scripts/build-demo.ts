@@ -714,10 +714,35 @@ async function settle(page: Page, map: string): Promise<void> {
   await page.waitForFunction(ready, undefined, { timeout: 60_000 });
 }
 
+// Changing the hash moves the camera asynchronously, and the webapp also writes its own (debounced) camera position
+// back into the hash, which can overwrite ours before it is applied. On a flat plaza the "settled" checks already
+// hold at the old position, so keep setting the hash until the orbit target has reached the requested x/z.
 async function go(page: Page, hash: string): Promise<void> {
-  await page.evaluate((h) => {
-    window.location.hash = h;
-  }, hash);
+  const [, x, , z] = hash.split(":").map(Number);
+  for (let attempt = 1; ; attempt++) {
+    await page.evaluate((h) => {
+      window.location.hash = h;
+    }, hash);
+    if (Number.isNaN(x) || Number.isNaN(z)) return;
+    for (let poll = 0; poll < 30; poll++) {
+      const arrived = await page.evaluate(
+        ([tx, tz]) => {
+          const p = window.bluemap?.mapViewer?.controlsManager?.position;
+          return !!p && Math.abs(p.x - tx) < 0.5 && Math.abs(p.z - tz) < 0.5;
+        },
+        [x, z],
+      );
+      if (arrived) return;
+      await page.waitForTimeout(100);
+    }
+    if (attempt === 20) {
+      const now = await page.evaluate(() => {
+        const p = window.bluemap?.mapViewer?.controlsManager?.position;
+        return { x: p?.x, y: p?.y, z: p?.z, hash: window.location.hash };
+      });
+      throw new Error(`camera did not reach ${hash}: at ${JSON.stringify(now)}`);
+    }
+  }
 }
 
 // The height of the orbit target the webapp settled on (the height controls set it in perspective view).
