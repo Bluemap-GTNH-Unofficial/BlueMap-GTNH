@@ -3,8 +3,8 @@
 BlueMap GTNH is a Forge 1.7.10 **server** mod. Players do not install anything; they open the map in a browser.
 Before you start, check that your setup matches one this port has been tested on.
 
-> [!WARNING] Two pack versions, one machine
-> The port supports **GT New Horizons 2.9.0** and was tested on 2.9.0 and on **2.9.0-RC-2**, on one machine. Other
+> [!WARNING] One pack version, one machine
+> The port supports **GT New Horizons 2.9.0** and was tested on 2.9.0 only, on one machine. Other
 > pack versions are untested and are likely to break the exported resource pack and the GregTech renderers. **Back up
 > your world before installing.** The server mod does not change chunk data, but it runs inside your server process
 > and asks the server to save the world.
@@ -13,10 +13,10 @@ Before you start, check that your setup matches one this port has been tested on
 
 | | Requirement |
 |---|---|
-| Modpack | GT New Horizons **2.9.0**, the **Java 17-26** [server pack](https://downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_2.9.0_Server_Java_17-26.zip); 2.9.0-RC-2 ([server pack](https://downloads.gtnewhorizons.com/ServerPacks/betas/GT_New_Horizons_2.9.0-RC-2_Server_Java_17-26.zip)) is tested too. The same mod jar runs on both. |
+| Modpack | GT New Horizons **2.9.0**, the **Java 17-26** [server pack](https://downloads.gtnewhorizons.com/ServerPacks/GT_New_Horizons_2.9.0_Server_Java_17-26.zip) |
 | Java | **Java 25**, through lwjgl3ify (the way the Java 17-26 pack runs). The mod is compiled to Java 25 bytecode and does not load on Java 8. |
 | Kotlin runtime | Forgelin, which ships with the pack |
-| Memory | Our 65,536-chunk test ran with `-Xmx12G`; BlueMap used 2.3-5.0 GB of heap after GC while rendering (see [performance](/guide/performance)) |
+| Memory | Our test servers run with `-Xmx12G` (see [performance](/guide/performance)) |
 | Network | BlueMap's web server listens on port **8100** by default |
 | Vanilla textures | BlueMap downloads Mojang's client jar once you set `accept-download: true`, which means you accept the [Minecraft EULA](https://www.minecraft.net/eula) |
 
@@ -25,12 +25,10 @@ Before you start, check that your setup matches one this port has been tested on
 Modded blocks in 1.7.10 are drawn by code, so the map can only show them after you export their appearance from a
 **client** of the same pack. You need:
 
-- a separate copy of the matching GTNH **2.9.0** client (Java 17-26 instance; a 2.9.0-RC-2 client for a 2.9.0-RC-2
-  server), with the same addons as the server if you run any;
+- a separate copy of the matching GTNH **2.9.0** client (Java 17-26 instance), with the same addons as the server if
+  you run any;
 - for the automated route, the
-  [GTNH 2.9.0 Java 17-26 MultiMC/Prism instance zip](https://downloads.gtnewhorizons.com/Multi_mc_downloads/GT_New_Horizons_2.9.0_Java_17-26.zip)
-  (for 2.9.0-RC-2 the
-  [2.9.0-RC-2 instance zip](https://downloads.gtnewhorizons.com/Multi_mc_downloads/betas/GT_New_Horizons_2.9.0-RC-2_Java_17-26.zip)),
+  [GTNH 2.9.0 Java 17-26 MultiMC/Prism instance zip](https://downloads.gtnewhorizons.com/Multi_mc_downloads/GT_New_Horizons_2.9.0_Java_17-26.zip),
   [uv](https://docs.astral.sh/uv/) and [mise](https://mise.jdx.dev/). The launcher route has only been tested on
   **macOS on Apple silicon**;
 - a desktop session: the client opens a (minimized) window. A headless Docker export is not available yet.

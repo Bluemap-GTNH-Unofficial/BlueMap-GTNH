@@ -21,7 +21,7 @@ accept-download: true
 ```
 
 ```sh [copy the pack]
-cp bluemap-gtnh-resources-2.9.0.zip /path/to/server/config/bluemap/packs/   # 2.9.0-RC-2: bluemap-gtnh-resources-2.9.0-RC-2.zip
+cp bluemap-gtnh-resources-2.9.0.zip /path/to/server/config/bluemap/packs/
 ```
 
 ```text [server console / RCON]
@@ -36,13 +36,12 @@ bluemap reload
   `loader: "gtnh:anvil_1_7"`. Details on [maps, commands and config](/guide/maps).
 - It regenerates `config/bluemap/packs/gtnh-runtime/` from the running server: the dimension types of loaded
   non-vanilla dimensions and all modded biomes.
-- It does not slow down the server start beyond noise in our measurements (26-27 s without the mod, 26-30 s with it);
-  BlueMap finishes loading about 1.3 s after the server is ready, about 11 s with the exported pack installed.
+- BlueMap loads in the background after the server is ready: on our 2.9.0 addon server it had finished loading about
+  10 s later, with the exported addon pack installed.
 
 ## Requirements recap
 
-- GTNH **2.9.0** (or the also tested 2.9.0-RC-2), Java 17-26 server pack, running on **Java 25** (lwjgl3ify). On
-  Java 8 the mod does not load. The same mod jar runs on both pack versions.
+- GTNH **2.9.0**, Java 17-26 server pack, running on **Java 25** (lwjgl3ify). On Java 8 the mod does not load.
 - Forgelin, which the pack provides.
 - The exported resource pack, or modded blocks render as missing-texture cubes.
 

@@ -15,12 +15,11 @@ starts through lwjgl3ify (`@java9args.txt -jar lwjgl3ify-forgePatches.jar nogui`
 
 That is BlueMap's missing-texture cube. Either the exported pack is missing, or it does not match the pack:
 
-- Check that the pack of your server's version (`bluemap-gtnh-resources-2.9.0.zip` on 2.9.0,
-  `bluemap-gtnh-resources-2.9.0-RC-2.zip` on 2.9.0-RC-2) is in `config/bluemap/packs/` and run `/bluemap reload`, then
-  `/bluemap force-update` for the affected area.
+- Check that the pack of your server's version (`bluemap-gtnh-resources-2.9.0.zip` on 2.9.0) is in
+  `config/bluemap/packs/` and run `/bluemap reload`, then `/bluemap force-update` for the affected area.
 - Export from a client with the same pack version and the same addons as the server.
-- 518 block states cannot be exported at all on 2.9.0-RC-2 and always show as missing-texture cubes; see
-  [known gaps](/status#known-gaps).
+- 1,476 of the 61,468 block states of 2.9.0 cannot be exported at all; unless a dedicated renderer draws them, they
+  always show as missing-texture cubes. `export-report.json` lists them; see [known gaps](/status#known-gaps).
 
 ## Vanilla blocks have no textures
 
@@ -50,7 +49,8 @@ uv run gtnh-client play --server 127.0.0.1:25567 --username Tester   # 2 s delay
 
 The exporter runs 20 client ticks after the first screen (the main menu) opens, then quits. If the client never
 reaches the main menu, read the client log (`clients/<client>/logs-launcher/client-*.log`); first boots of a fresh
-client take about 96 s. The launcher stops the client after `--timeout` (1800 s by default) with exit code 124.
+client take longer than later ones. The launcher stops the client after `--timeout` (1800 s by default) with exit
+code 124.
 
 ## The server crashes with the community addons
 

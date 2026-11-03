@@ -16,7 +16,7 @@ Animated effects (halos, beams) are drawn frozen at their first frame, and beams
 - **GT: Not Leisure needs GTNLLib.** GTNLLib is a library mod split out of GTNL; GTNL 0.2.7-rc2.1 does not load
   without it. Install `gtnllib-1.1.3.jar` next to the GTNL jar on the server and on the exporting client.
 - **[123Technology](https://github.com/CallmeSHaobe/123Technology) is not supported** until an upstream release for
-  2.9.0 exists. Its newest release, 2.2.0.1, is built for 2.9.0-RC-2 and stops a 2.9.0 server while loading
+  2.9.0 exists. Its newest release, 2.2.0.1, stops a 2.9.0 server while loading
   (`NoSuchFieldError: tectech.util.CommonValues.TEC_MARK_EM`); the fix is on its main branch but not released yet.
   The port's 123Technology renderers (rocket, assembler, three figures) stay in place for that release.
 

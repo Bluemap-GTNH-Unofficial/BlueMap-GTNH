@@ -5,10 +5,9 @@ Modded blocks in 1.7.10 are drawn by code, not by resource-pack models, so BlueM
 every registered block looks and writes the answer as a BlueMap resource pack. Vanilla blocks are rendered from
 Mojang's 1.13 client jar and are not exported.
 
-Either route gives you `bluemap-gtnh-resources-2.9.0.zip` (named after the client's pack version, so
-`bluemap-gtnh-resources-2.9.0-RC-2.zip` from a 2.9.0-RC-2 client; about 27 MB) and `export-report.json` with per-mod
-counts. If your server runs any of the [community addons](/guide/addons), export from a client that has the same
-addons and configuration.
+Either route gives you `bluemap-gtnh-resources-2.9.0.zip` (named after the client's pack version; about 31 MB) and
+`export-report.json` with per-mod counts. If your server runs any of the [community addons](/guide/addons), export
+from a client that has the same addons and configuration.
 
 > [!CAUTION] Do not redistribute the pack
 > The pack contains the textures of the pack's mods. Use it on your own server only. Release assets of this project
@@ -51,14 +50,12 @@ uv run gtnh-client export --client-dir ../../clients/gtnh-addons-2.9.0 \
 
 :::
 
-The pack lands in `out/exporter-2.9.0/`. One export takes about a minute on our machine (client start, about 5 s of
-export, automatic exit); the first boot of a freshly unpacked client takes about 96 s to the main menu.
+The pack lands in `out/exporter-2.9.0/`. One export takes about 51 s on our machine (client start, about 5 s of
+export, automatic exit).
 
-For 2.9.0-RC-2, put the
-[2.9.0-RC-2 instance zip](https://downloads.gtnewhorizons.com/Multi_mc_downloads/betas/GT_New_Horizons_2.9.0-RC-2_Java_17-26.zip)
-into `downloads/` and add `--pack-version 2.9.0-RC-2` to any launcher command: it then uses `clients/gtnh-2.9.0-RC-2`
-and writes to `out/exporter/`. Without the flag the launcher takes the version of the `--client-dir` it is given,
-else `$BMGTNH_PACK_VERSION`, else 2.9.0.
+Every launcher command takes `--pack-version`, which only accepts `2.9.0` (the default; `$BMGTNH_PACK_VERSION` sets it
+too). Given the flag, the launcher refuses a client directory whose own pack version (GTNH Core Mod's
+`ModPackVersion` in `config/GTNewHorizons/dreamcraft.cfg`) differs.
 
 Useful launcher commands:
 
@@ -74,7 +71,7 @@ All options are in the
 
 ## Route 2: by hand (untested)
 
-1. Make a **copy** of your 2.9.0 (or 2.9.0-RC-2) client instance.
+1. Make a **copy** of your 2.9.0 client instance.
 2. Put `bluemap-gtnh-exporter-0.1.0.jar` into the copy's `mods/` folder.
 3. Start the copy. When the main menu appears, the mod exports to `.minecraft/bluemap-gtnh-export/` and closes the
    game (exit code 0; 1 if the export failed).
@@ -98,8 +95,9 @@ then run `/bluemap reload` on the server (or restart it).
 | No icon or an exception | nothing; the map draws a missing-texture cube and the report says why |
 
 GregTech machines, ores and frames also get a dump of GregTech's own texture data (`gtnh/gregtech/`), which the
-[GregTech renderers](/architecture#renderers) use. On 2.9.0-RC-2 the export covers 4,092 blocks with 62,476 states
-from 138 mods; 518 states could not be exported. The format is documented in the
+[GregTech renderers](/architecture#renderers) use. On 2.9.0 the export covers 4,087 blocks with 61,468 states from
+138 mods; 1,476 of these states could not be exported (`export-report.json` lists them per mod, with the reason) and
+draw as missing-texture cubes unless a dedicated renderer draws them. The format is documented in the
 [exporter README](https://github.com/Bluemap-GTNH-Unofficial/gtnh-exporter#what-is-exported).
 
 ## Optional: Modernity-GTNH look
@@ -107,5 +105,7 @@ from 138 mods; 518 states could not be exported. The format is documented in the
 The [`modernity`](https://github.com/Bluemap-GTNH-Unofficial/modernity) tool builds packs with the
 [Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH) textures from a release you download yourself.
 
-> [!IMPORTANT] Currently broken
-> Textures render incorrectly with the packs the `modernity` tool builds. It is being reworked; do not use it for now.
+`modernity vanilla` converts its vanilla textures; `modernity modded` exports a 2.9.0 client with the release enabled.
+Connected-texture sheets, MCPatcher compact CTM, self-culling glass, hatch connections, panes and the layer order of
+werkstoff textures are handled. In the per-state oracle on 2.9.0, 76.5% of the judged block states pass with the
+Modernity packs (78.5% with the default export); see [status](/status).

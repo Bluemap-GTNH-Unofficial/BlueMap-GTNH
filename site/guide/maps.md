@@ -25,7 +25,7 @@ for a dimension that has **at least one region file**:
 - Every dimension that got (or had) a config is recorded in `gtnh-known-dimensions.conf`. Deleting a map config
   therefore removes the map for good; it does not come back on the next start.
 - `gtnh-runtime/` holds the dimension types of loaded non-vanilla dimensions (sky, ceiling, light from the dimension's
-  `WorldProvider`) and every modded biome (temperature, rainfall, water colour; 155 modded biomes on 2.9.0-RC-2).
+  `WorldProvider`) and every modded biome (temperature, rainfall, water colour; 185 modded biomes on 2.9.0).
   Dimensions loaded later update their file for the next `/bluemap reload`.
 
 The generated configs use BlueMap's own commented template and its map ids: `world` for the overworld,
@@ -75,16 +75,13 @@ lets BlueMap's server-thread work (such as saving) run meanwhile. Commands still
 
 ## Live updates and players
 
-- Tiles update after world saves: BlueMap watches the region files. In our test, tiles were re-rendered within 25 s
-  of `save-all`.
-- Online players appear on the map. In a test with a real client, login, position, teleports (updated within
-  1-1.5 s), invisibility and logout were all shown correctly.
+- Tiles update after world saves: BlueMap watches the region files.
+- Online players appear on the map.
 
 ## Render threads
 
 BlueMap renders with 3 threads by default (`render-thread-count` in `core.conf`). For the first full render of a
-large world, more threads are much faster and did not cost TPS on our 18-core machine; see
-[performance](/guide/performance).
+large world, more threads are faster; see [performance](/guide/performance).
 
 ## Web server
 

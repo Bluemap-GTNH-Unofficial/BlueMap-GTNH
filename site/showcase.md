@@ -18,8 +18,8 @@ zoom, and switch maps with the map button in the top left corner of the map. Eac
 uses:
 
 - **End-game machines (Modernity-GTNH textures)** (`endgame_modernity`): the largest end-game multiblocks of GTNH
-  2.9.0-RC-2 on one plaza, in the look of the [Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH)
-  resource pack. The map opens on it.
+  2.9.0 on one plaza, in the look of the [Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH) resource
+  pack. The map opens on it.
 - **GregTech multiblocks (Modernity-GTNH textures)** (`gt_multiblocks_modernity`): formed multiblocks of GregTech
   and its addon mods, one every 48 blocks along the x axis, floating at y = 20.
 - **End-game machines (default textures)** (`endgame_default`): the same plaza with the exported resource pack only,
@@ -43,8 +43,8 @@ and generator) and, at the back, the Forge of the Gods with one module of each k
 Collider. The [orchestrator](https://github.com/Bluemap-GTNH-Unofficial/orchestrator) built it: each controller is
 placed facing north and its structure is built automatically with StructureLib, at the stack size that gives every
 tiered part its highest tier (Eye of Harmony tier 9 field generators, Eternal coils, UXV-tier glass, Space Elevator
-motor tier 5, all three Godforge rings). The scene then checks that every machine formed. The world is generated
-without structures, and the plaza is cleared before anything is built.
+motor tier 5, all three Godforge rings). The scene then checks that every machine formed; on GTNH 2.9.0 all 35 do.
+The world is generated without structures, and the plaza and its surroundings are cleared before anything is built.
 
 Select **Show in the live map** to fly the map above to a screenshot's camera. The cameras use the map's perspective
 view, so you can then drag to orbit around the machine and scroll to zoom.
@@ -73,10 +73,11 @@ missing from the map:
   are formed, so the map could not show them. The Space Elevator's project modules and the Nano Forge do not form in
   a scene built this way.
 
-The Modernity-GTNH look is close to the game but not the same yet: on the client oracle it matches fewer block faces
-than the default packs, and some glass and connected textures differ (see the
-[`modernity` README](https://github.com/Bluemap-GTNH-Unofficial/modernity#readme)). In the comparison above, the
-Mega Electric Blast Furnace's glass is see-through with the default pack and an opaque pattern with Modernity-GTNH.
+The Modernity-GTNH look is checked against a real client running Modernity-GTNH and MyCTMLib, like the default look
+against the plain client. Connected textures (MyCTMLib sheets and GregTech's MCPatcher glass), hatches joining their
+casings, panes and layered Werkstoff blocks were fixed against that client. On the client oracle 76.5% of judged block
+states and 78.6% of judged block faces in five scene worlds match it (95.0% on the GregTech multiblocks); the
+[status page](/status#real-client-oracle) has the numbers per scene.
 
 ## Gallery
 

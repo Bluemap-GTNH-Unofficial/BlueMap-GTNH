@@ -9,7 +9,7 @@ resource-pack model, and a client-side exporter that captures how modded blocks 
 
 ```mermaid
 flowchart TB
-  subgraph server["GTNH 2.9.0 (or 2.9.0-RC-2) server, Java 25"]
+  subgraph server["GTNH 2.9.0 server, Java 25"]
     world[("World save<br/>1.7.10 Anvil, EndlessIDs")]
     mod["Server mod<br/>implementations/gtnh"]
     runtime["gtnh-runtime pack<br/>dimension types, modded biomes"]
@@ -109,7 +109,11 @@ flowchart LR
 
 - Quads are captured with GTNHLib's `TessellatorManager` around the block's own render call, in both render passes.
 - Icons are exported as textures; colours (`colorMultiplier` probed in 7 biomes) become grass, foliage or water tints
-  or constant colours; `isOpaqueCube` drives culling.
+  or constant colours; `isOpaqueCube` drives culling, and blocks that hide faces against copies of themselves (glass,
+  including BartWorks' tiered glass) cull those faces in BlueMap too.
+- Connected textures are exported as data: MyCTMLib `.mcmeta` sections with their connection sheets (taken from the
+  PNG, not from MyCTMLib's padded atlas copy), and the MCPatcher `method=compact` overrides Angelica loaded (GT's
+  BartWorks glass, for example), recorded in the same format. The renderers then connect them by neighbours.
 - Resource paths are normalised with one reversible rule shared by the reader and the exporter (uppercase letters
   become `~` + lowercase, other characters a `!` + hex escape), because macOS file systems are case-insensitive and
   names such as `ProjRed|Exploration` do not fit zip paths. The exporter compiles the reader's `ResourceKeys.kt`
@@ -127,12 +131,14 @@ rest:
 | `gtnh:quads` | blocks captured as quads by the exporter |
 | `gtnh:gt_machine` | GregTech machines, hatches, multiblock controllers, cables and pipes, from tile-entity NBT (`mID`, facing, active state, connections, colour) and the GregTech dump |
 | `gtnh:gt_ore`, `gtnh:gt_frame` | GregTech ores (decoded from the metadata) and frame boxes |
-| `gtnh:ctm` and Chisel | connected textures: Chisel's CTM layouts and MyCTMLib's `compact` format |
+| `gtnh:ctm` and Chisel | connected textures: Chisel's CTM layouts, MyCTMLib's `compact` format and MCPatcher compact sheets; GregTech hatches, buses and controllers connect to their casings through their casing layer, as in the client |
 | Mod renderers | Iron Chests, BiblioCraft (partial), AE2 cable bus, parts and facades, EnderIO conduits and facades |
-| Addon special renderers | static versions of key TESRs of TST, GTNL, Box++ and 123Technology |
+| Addon special renderers | static versions of key TESRs of TST, GTNL and Box++ (and of 123Technology, which is not supported on 2.9.0 until an upstream release loads there) |
 
 Modded IDs without a blockstate are drawn as BlueMap's missing-texture cube instead of leaving a hole. Special
-renderers without textures are coloured with a white texture from the exporter and vertex colours.
+renderers without textures are coloured with a white texture from the exporter and vertex colours. Coplanar quads are
+drawn in the client's order: a later quad that covers an earlier one hides it (a Werkstoff block's material icon over
+its base, for example), where the web app alone would order them by texture.
 
 ## Server mod
 
@@ -157,17 +163,19 @@ flowchart LR
   dump --> verify
   worlds --> cli["BlueMap CLI<br/>legacy + gtnh-render + pack"]
   cli --> e2e["e2e<br/>Chromium, SwiftShader"]
-  baselines[("baselines, local only")] --> e2e
-  realclient["Real GTNH client"] -.-> oracle["client oracle<br/>in progress"]
-  cli -.-> oracle
+  baselines[("baselines, local only<br/>regression check")] --> e2e
+  realclient["Real GTNH client<br/>gtnh-client states / cameras"] --> oracle["client oracle<br/>e2e oracle states / world"]
+  cli --> oracle
 ```
 
 - **`harness`** (`bmh`) is a server-side test mod: block grids ("zoos"), GregTech machines placed like a player
   would, multiblocks built with StructureLib, pre-generation and world dumps, all over RCON.
-- **`orchestrator`** starts headless GTNH servers, builds deterministic scenes from an empty level, dumps them right
-  after saving and snapshots the world.
+- **`orchestrator`** starts headless GTNH servers, builds deterministic scenes from an empty level with structure
+  generation off on cleared ground, dumps them right after saving and snapshots the world.
 - **`e2e`** renders each scene with the BlueMap CLI, opens camera views in headless Chromium with software WebGL and
-  compares pixel-identical screenshots with locally approved baselines.
+  compares pixel-identical screenshots with locally approved baselines (a regression check). Its
+  [client oracle](/development/oracle) compares BlueMap with the real GTNH client, per block state and per visible
+  block face of the scene worlds.
 
 What these checks prove is on the [status page](/status#verification); how to run them is in
 [tests & scenes](/development/testing).
