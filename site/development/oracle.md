@@ -26,14 +26,19 @@ judged. Faces hidden by something nearer in the other rendering are not compared
 blocks (glass, ice, water) is judged as its own face.
 
 ```sh
-cd gtnh-exporter/launcher && uv run gtnh-client states    # client reference renders of every state
-cd ../../e2e
-uv run e2e oracle states --variant default                # BlueMap side, comparison and report
-uv run e2e oracle world --variant default --scene vanilla-zoo --scene gt-machines
-uv run e2e oracle world --variant modernity --scene gtnh-zoo --capture always
+cd e2e
+uv run e2e oracle states --variant default                # client reference (cached) + BlueMap side, comparison, report
+uv run e2e oracle world --variant default --variant modernity --all   # every scene of both variants
+uv run e2e oracle world --variant modernity --scene gtnh-zoo --recapture
 uv run e2e oracle swap-test                               # detection power of the state thresholds
 uv run e2e oracle world-swap-test                         # the same for the world thresholds
 ```
+
+The client's reference captures are cached by content: the key covers the pack version, the client's mods, resource
+packs and the capture settings, the scene's blocks and tile entities, and the cameras (state oracle: the state
+list). A run only launches the client for scenes whose key has no capture yet, all of them in one launcher run per
+variant; otherwise only the BlueMap side runs. The thresholds are stored with the reference keys they were calibrated
+on and reused until those change. Details are in the e2e README ("Reference cache").
 
 Variants: `default` (the exported pack), `modernity` (the Modernity-GTNH packs, against a client running Modernity
 and MyCTMLib) and `addons` (the addon export, against a client with the five community addons). Every run writes
