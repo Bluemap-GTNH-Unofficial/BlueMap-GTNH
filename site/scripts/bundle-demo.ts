@@ -126,8 +126,9 @@ function bundle(): void {
 }
 
 function publish(): void {
-  const tag = args.tag ?? fail("--tag demo-<yyyymmdd> is required");
-  if (!/^demo-\d{8}$/.test(tag)) fail(`tag must look like demo-<yyyymmdd>, got ${tag}`);
+  const tag = args.tag ?? fail("--tag demo-<yyyymmdd>[-<n>] is required");
+  // a numeric suffix allows a second demo on the same day; the workflow picks the newest by publish date
+  if (!/^demo-\d{8}(-\d+)?$/.test(tag)) fail(`tag must look like demo-<yyyymmdd>[-<n>], got ${tag}`);
   const manifestFile = path.join(OUT, MANIFEST);
   const archive = path.join(OUT, ARCHIVE);
   if (!fs.existsSync(manifestFile) || !fs.existsSync(archive)) fail("no bundle; run `pnpm demo:bundle` first");
