@@ -80,8 +80,7 @@ lets BlueMap's server-thread work (such as saving) run meanwhile. Commands still
 
 ## Render threads
 
-BlueMap renders with 3 threads by default (`render-thread-count` in `core.conf`). For the first full render of a
-large world, more threads are faster; see [performance](/guide/performance).
+BlueMap renders with 3 threads by default (`render-thread-count` in `core.conf`).
 
 ## Web server
 

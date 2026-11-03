@@ -36,8 +36,7 @@ bluemap reload
   `loader: "gtnh:anvil_1_7"`. Details on [maps, commands and config](/guide/maps).
 - It regenerates `config/bluemap/packs/gtnh-runtime/` from the running server: the dimension types of loaded
   non-vanilla dimensions and all modded biomes.
-- BlueMap loads in the background after the server is ready: on our 2.9.0 addon server it had finished loading about
-  10 s later, with the exported addon pack installed.
+- BlueMap loads in the background after the server is ready.
 
 ## Requirements recap
 
