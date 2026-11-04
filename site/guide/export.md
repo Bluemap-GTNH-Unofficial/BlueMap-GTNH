@@ -23,8 +23,9 @@ that matches your server:
 | `bluemap-gtnh-resources-2.9.0.zip` (base pack, about 31 MB) | plain GTNH 2.9.0 servers | a plain 2.9.0 client |
 | `bluemap-gtnh-resources-2.9.0-addons.zip` (addon pack, about 34 MB) | servers running the five supported [community addons](/guide/addons) | a 2.9.0 client with Twist Space Technology 0.8.0, Programmable Hatches 0.2.1p2, GT: Not Leisure 0.2.7-rc2.1 with GTNLLib 1.1.3, NH Utilities 1.7.0 and Box++ 2.2.0.0 |
 
-Download it from the [releases](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/releases), check it against
-`SHA256SUMS` and [install it](#install-the-pack).
+Download it from the [releases](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/releases) (the newest packs
+are in `exporter-0.2.1`, which also carries the exporter and launcher; the server mod stays in `v5.29-gtnh.2`), check
+it against `SHA256SUMS` and [install it](#install-the-pack).
 
 - **Your modlist differs?** Export your own pack (below). A pack from a client with exactly your mods, versions and
   configuration matches your server best; the ready packs only know the blocks of 2.9.0 and these five addons.
@@ -36,7 +37,7 @@ Download it from the [releases](https://github.com/Bluemap-GTNH-Unofficial/BlueM
   [open a takedown issue](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/issues/new?template=takedown.yml);
   removal is prompt. `TAKEDOWN.md` in the release says the same.
 
-## Route 1: the launcher (tested on macOS arm64)
+## Route 1: the launcher (tested on macOS arm64 and Windows x64)
 
 The `gtnh-client` launcher unpacks a fresh client from the Prism instance zip, downloads Mojang, Forge and LWJGL 3
 libraries (SHA-1 verified), starts the client minimized and muted with plain `java`, runs the exporter and quits.
@@ -57,7 +58,7 @@ uv run gtnh-client export --clean
 ```sh [use the released jar]
 cd gtnh-exporter/launcher
 uv run gtnh-client export --clean \
-  --mod-jar /path/to/bluemap-gtnh-exporter-0.2.0.jar
+  --mod-jar /path/to/bluemap-gtnh-exporter-0.2.1.jar
 ```
 
 ```sh [with community addons]
@@ -95,7 +96,7 @@ All options are in the
 ## Route 2: by hand (untested)
 
 1. Make a **copy** of your 2.9.0 client instance.
-2. Put `bluemap-gtnh-exporter-0.2.0.jar` into the copy's `mods/` folder.
+2. Put `bluemap-gtnh-exporter-0.2.1.jar` into the copy's `mods/` folder.
 3. Start the copy. When the main menu appears, the mod exports to `.minecraft/bluemap-gtnh-export/` and closes the
    game (exit code 0; 1 if the export failed).
 4. Remove the jar from the copy afterwards.

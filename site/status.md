@@ -4,9 +4,9 @@ import { data as n } from "./data/results.data.ts";
 
 # Status
 
-This page describes the current source, which the next release, **`v5.29-gtnh.2`** (BlueMap 5.29 plus the port),
-will ship. It supports **GT New Horizons 2.9.0** only, and every number on this page was measured on 2.9.0, on one
-machine.
+This page describes the current source: the server mod released as **`v5.29-gtnh.2`** (BlueMap 5.29 plus the port)
+and the exporter and launcher released as **`exporter-0.2.1`**. It supports **GT New Horizons 2.9.0** only, and every
+number on this page was measured on 2.9.0, on one machine.
 
 > [!WARNING] Unofficial, vibe coded, no guarantee
 > This project is **not** affiliated with, endorsed by or supported by [BlueMap](https://github.com/BlueMap-Minecraft/BlueMap)

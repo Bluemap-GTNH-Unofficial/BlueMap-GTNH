@@ -55,7 +55,7 @@ import { data as n } from "../data/results.data.ts";
 
 ## 当前状态
 
-当前源码将作为 **`v5.29-gtnh.2`**（BlueMap 5.29 加上本移植）发布，支持 GTNH 2.9.0。以下数据均在 GTNH 2.9.0 上、在一台机器上测得。
+当前源码已发布为 **`v5.29-gtnh.2`**（服务端模组：BlueMap 5.29 加上本移植）和 **`exporter-0.2.1`**（导出模组、启动器和现成资源包），支持 GTNH 2.9.0。以下数据均在 GTNH 2.9.0 上、在一台机器上测得。
 
 <div class="status-grid">
   <div class="stat"><span class="value">0</span><span class="label">处读取器与运行中服务端的不一致（12 个场景）</span></div>

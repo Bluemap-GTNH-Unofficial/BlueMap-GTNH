@@ -59,8 +59,9 @@ import { data as n } from "./data/results.data.ts";
 
 ## Status
 
-The current source, released next as **`v5.29-gtnh.2`** (BlueMap 5.29 plus the port), supports GTNH 2.9.0. The
-numbers below were measured on GTNH 2.9.0, on one machine.
+The current source, released as **`v5.29-gtnh.2`** (server mod: BlueMap 5.29 plus the port) and **`exporter-0.2.1`**
+(exporter, launcher and ready packs), supports GTNH 2.9.0. The numbers below were measured on GTNH 2.9.0, on one
+machine.
 
 <div class="status-grid">
   <div class="stat"><span class="value">0</span><span class="label">mismatches between the world reader and the live server, 12 scenes</span></div>

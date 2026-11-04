@@ -57,7 +57,8 @@ Quick links (readable on GitHub too):
 - [Development: workspace & toolchain](site/development/index.md) · [Building](site/development/building.md) ·
   [Tests & scenes](site/development/testing.md) · [Client oracle](site/development/oracle.md)
 - [Releases](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/releases) (`v5.29-gtnh.2`: BlueMap 5.29 plus
-  the port, and the ready 2.9.0 base and addon resource packs) · [Third-party notices](NOTICE.md)
+  the port; `exporter-0.2.1`: exporter, launcher and the ready 2.9.0 base and addon resource packs) ·
+  [Third-party notices](NOTICE.md)
 
 ## Repositories
 
