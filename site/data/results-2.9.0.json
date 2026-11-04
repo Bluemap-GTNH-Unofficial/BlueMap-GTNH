@@ -1,0 +1,406 @@
+{
+ "packVersion": "2.9.0",
+ "states": {
+  "default": {
+   "created": "2026-11-04 01:44:52",
+   "states": 62659,
+   "judged": 61513,
+   "passed": 48039,
+   "accepted": 120,
+   "clientBlank": 789,
+   "clientError": 237,
+   "thresholds": {
+    "view": {
+     "iou_min": 1,
+     "delta_e_max": 1.221,
+     "ssim_min": 0.9925,
+     "min_pixels": 32
+    },
+    "face": {
+     "iou_min": 0.9753,
+     "delta_e_max": 2.926,
+     "ssim_min": 0.9866,
+     "min_pixels": 32
+    }
+   },
+   "mods": {
+    "gregtech": {
+     "judged": 6157,
+     "passed": 3804
+    }
+   }
+  },
+  "modernity": {
+   "created": "2026-11-04 02:00:47",
+   "states": 62659,
+   "judged": 61582,
+   "passed": 46905,
+   "accepted": 52,
+   "clientBlank": 788,
+   "clientError": 237,
+   "thresholds": {
+    "view": {
+     "iou_min": 1,
+     "delta_e_max": 1.221,
+     "ssim_min": 0.9925,
+     "min_pixels": 32
+    },
+    "face": {
+     "iou_min": 0.9753,
+     "delta_e_max": 2.926,
+     "ssim_min": 0.9866,
+     "min_pixels": 32
+    }
+   },
+   "mods": {
+    "gregtech": {
+     "judged": 6157,
+     "passed": 3646
+    }
+   }
+  }
+ },
+ "statesCalibration": {
+  "texture": {
+   "states": 233,
+   "failing": 6
+  },
+  "geometry": {
+   "states": 261,
+   "failing": 12
+  }
+ },
+ "statesSwap": {
+  "created": "2026-11-04 01:09:47",
+  "differing": 27778,
+  "flagged": 27774
+ },
+ "worlds": {
+  "default": {
+   "vanilla-zoo": {
+    "created": "2026-11-04T01:49:05",
+    "views": 5,
+    "viewsAligned": 5,
+    "judged": 2221,
+    "passed": 1990,
+    "accepted": 3710
+   },
+   "gtnh-zoo": {
+    "created": "2026-11-04T01:51:36",
+    "views": 3,
+    "viewsAligned": 3,
+    "judged": 3387,
+    "passed": 2389,
+    "accepted": 2551
+   },
+   "gt-machines": {
+    "created": "2026-11-04T01:50:53",
+    "views": 9,
+    "viewsAligned": 9,
+    "judged": 3299,
+    "passed": 2966,
+    "accepted": 1168
+   },
+   "gt-pipes": {
+    "created": "2026-11-04T01:51:24",
+    "views": 4,
+    "viewsAligned": 4,
+    "judged": 3486,
+    "passed": 3042,
+    "accepted": 2908
+   },
+   "gt-ores": {
+    "created": "2026-11-04T01:51:18",
+    "views": 3,
+    "viewsAligned": 3,
+    "judged": 2632,
+    "passed": 1438,
+    "accepted": 782
+   },
+   "gt-multiblocks": {
+    "created": "2026-11-04T01:51:09",
+    "views": 9,
+    "viewsAligned": 9,
+    "judged": 411,
+    "passed": 398,
+    "accepted": 0
+   },
+   "mod-renderers": {
+    "created": "2026-11-04T01:51:49",
+    "views": 13,
+    "viewsAligned": 13,
+    "judged": 3008,
+    "passed": 2042,
+    "accepted": 9820
+   },
+   "endgame": {
+    "created": "2026-11-04T01:50:43",
+    "views": 35,
+    "viewsAligned": 35,
+    "judged": 78695,
+    "passed": 77087,
+    "accepted": 0
+   }
+  },
+  "modernity": {
+   "vanilla-zoo": {
+    "created": "2026-11-04T01:57:27",
+    "views": 5,
+    "viewsAligned": 5,
+    "judged": 2578,
+    "passed": 2279,
+    "accepted": 3372
+   },
+   "gtnh-zoo": {
+    "created": "2026-11-04T01:57:09",
+    "views": 3,
+    "viewsAligned": 3,
+    "judged": 3384,
+    "passed": 2379,
+    "accepted": 2546
+   },
+   "gt-machines": {
+    "created": "2026-11-04T01:56:38",
+    "views": 9,
+    "viewsAligned": 9,
+    "judged": 3299,
+    "passed": 2838,
+    "accepted": 1168
+   },
+   "gt-pipes": {
+    "created": "2026-11-04T01:57:00",
+    "views": 4,
+    "viewsAligned": 4,
+    "judged": 3488,
+    "passed": 2915,
+    "accepted": 2901
+   },
+   "gt-ores": {
+    "created": "2026-11-04T01:56:52",
+    "views": 3,
+    "viewsAligned": 3,
+    "judged": 2632,
+    "passed": 1426,
+    "accepted": 782
+   },
+   "gt-multiblocks": {
+    "created": "2026-11-04T01:56:45",
+    "views": 9,
+    "viewsAligned": 9,
+    "judged": 421,
+    "passed": 400,
+    "accepted": 0
+   },
+   "mod-renderers": {
+    "created": "2026-11-04T01:57:24",
+    "views": 13,
+    "viewsAligned": 13,
+    "judged": 3011,
+    "passed": 2052,
+    "accepted": 9818
+   },
+   "endgame": {
+    "created": "2026-11-04T01:56:21",
+    "views": 35,
+    "viewsAligned": 35,
+    "judged": 78986,
+    "passed": 77578,
+    "accepted": 35
+   }
+  },
+  "addons": {
+   "addons-zoo": {
+    "created": "2026-11-04T01:58:54",
+    "views": 4,
+    "viewsAligned": 4,
+    "judged": 364,
+    "passed": 256,
+    "accepted": 305
+   },
+   "addons-machines": {
+    "created": "2026-11-04T01:58:36",
+    "views": 5,
+    "viewsAligned": 5,
+    "judged": 3690,
+    "passed": 3422,
+    "accepted": 1068
+   },
+   "addons-multiblocks": {
+    "created": "2026-11-04T01:58:49",
+    "views": 11,
+    "viewsAligned": 11,
+    "judged": 7656,
+    "passed": 7469,
+    "accepted": 44
+   }
+  }
+ },
+ "worldsCalibration": {
+  "scene": "vanilla-zoo",
+  "thresholds": {
+   "iou_min": 1,
+   "delta_e_max": 2.337,
+   "ssim_min": 0.933,
+   "min_pixels": 64
+  },
+  "texture": {
+   "states": 137,
+   "failing": 4,
+   "faces": 1467,
+   "facesFailing": 8
+  },
+  "geometry": {
+   "states": 143,
+   "failing": 4,
+   "faces": 1496,
+   "facesFailing": 8
+  }
+ },
+ "worldsSwap": {
+  "created": "2026-11-04T01:10:16",
+  "scenes": [
+   "vanilla-zoo",
+   "gt-multiblocks",
+   "gtnh-zoo"
+  ],
+  "differing": 6545,
+  "flagged": 5216,
+  "same": 3224,
+  "sameFailing": 2,
+  "byDifference": {
+   "1-2": {
+    "faces": 175,
+    "flagged": 2
+   },
+   "2-5": {
+    "faces": 730,
+    "flagged": 145
+   },
+   "5-10": {
+    "faces": 1671,
+    "flagged": 1157
+   },
+   "10-20": {
+    "faces": 1896,
+    "flagged": 1860
+   },
+   "20-inf": {
+    "faces": 2073,
+    "flagged": 2052
+   }
+  }
+ },
+ "exports": {
+  "default": {
+   "blocks": 4087,
+   "states": 61468,
+   "mods": 138,
+   "failed": 1476,
+   "failedReasons": {
+    "error_icon": 920,
+    "exception": 70,
+    "invisible": 14,
+    "no_geometry": 136,
+    "no_texture": 253,
+    "tesr_only": 83
+   },
+   "mte": {
+    "total": 3412,
+    "ok": 3412,
+    "failed": 0
+   },
+   "casings": 498,
+   "casingErrors": 0,
+   "ctmTextures": 98
+  },
+  "addons": {
+   "blocks": 4190,
+   "states": 64158,
+   "mods": 144,
+   "failed": 1575,
+   "failedReasons": {
+    "error_icon": 920,
+    "exception": 70,
+    "invisible": 14,
+    "no_geometry": 136,
+    "no_texture": 352,
+    "tesr_only": 83
+   },
+   "mte": {
+    "total": 4450,
+    "ok": 4450,
+    "failed": 0
+   },
+   "casings": 580,
+   "casingErrors": 0,
+   "ctmTextures": 99
+  },
+  "modernity": {
+   "blocks": 4087,
+   "states": 61481,
+   "mods": 138,
+   "failed": 1476,
+   "failedReasons": {
+    "error_icon": 920,
+    "exception": 70,
+    "invisible": 14,
+    "no_geometry": 136,
+    "no_texture": 253,
+    "tesr_only": 83
+   },
+   "mte": {
+    "total": 3412,
+    "ok": 3412,
+    "failed": 0
+   },
+   "casings": 498,
+   "casingErrors": 0,
+   "ctmTextures": 372
+  }
+ },
+ "e2e": {
+  "vanilla-zoo": {
+   "views": 2
+  },
+  "gtnh-zoo": {
+   "views": 4
+  },
+  "gt-machines": {
+   "views": 10
+  },
+  "gt-pipes": {
+   "views": 5
+  },
+  "gt-ores": {
+   "views": 4
+  },
+  "gt-multiblocks": {
+   "views": 9
+  },
+  "mod-renderers": {
+   "views": 14
+  },
+  "addons-zoo": {
+   "views": 5
+  },
+  "addons-machines": {
+   "views": 6
+  },
+  "addons-multiblocks": {
+   "views": 12
+  },
+  "addons-tesr": {
+   "views": 8
+  }
+ },
+ "scenes": {
+  "gtMachines": {
+   "gt-machines": 2317,
+   "gt-pipes": 5616,
+   "gt-multiblocks": 133
+  },
+  "gtOres": 3904,
+  "multiblocks": 19,
+  "multiblocksFormed": 18
+ }
+}

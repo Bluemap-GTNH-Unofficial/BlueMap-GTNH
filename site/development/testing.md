@@ -81,8 +81,12 @@ ids.
 ```sh
 cd BlueMap
 mise exec -- ./gradlew :legacy:verifyDump \
-  --args="<world> minecraft:overworld <dump.ndjson> [--box x1 y1 z1 x2 y2 z2]"
+  --args="<world> minecraft:overworld <dump.ndjson> [--box x1 y1 z1 x2 y2 z2] [-- <world> minecraft:overworld <dump.ndjson> ...]"
+cd ../orchestrator && uv run orch verify --all   # every built scene in one run (`mise run verify`: about 20 s for 12)
 ```
+
+Checks separated by `--` run side by side in one JVM; each report is printed in argument order between
+`=== check <n>: <dump>` and `=== end <n>: <seconds> s`, and the run exits with 1 on any mismatch.
 
 The vanilla flattening oracle (a 1.7.10 world upgraded by the official 1.13.2 server, compared position by position):
 
@@ -103,6 +107,7 @@ cd e2e
 uv sync --group dev
 uv run playwright install chromium                 # once per machine
 uv run e2e run [scene...]                          # all scenes by default; exit 1 if any check fails
+uv run e2e run --jobs 1                            # one scene at a time (default: CPUs / 10 side by side)
 uv run e2e run gtnh-zoo --no-build --packs ../out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip
 uv run e2e approve <scene> [view...]               # copy the latest screenshots to baselines-2.9.0/
 uv run e2e list                                    # scenes, views and their URL hashes
@@ -133,6 +138,7 @@ pnpm demo                        # render + gallery
 pnpm demo --skip-render          # gallery only, from the existing maps
 pnpm demo --build                # build the CLI and addon jars with Gradle first
 pnpm demo --maps gt_multiblocks_modernity,gtnh_zoo_default   # a subset; gtnh_zoo_default is only built this way
+pnpm demo --pages 1              # gallery on one page (default: CPUs / 16 pages side by side)
 ```
 
 `scripts/build-demo.ts` renders scene worlds the same way `e2e` does (the newest CLI shadow jar, the `legacy` and
@@ -142,6 +148,11 @@ in its id and label: `default` uses the exported pack (`out/exporter-2.9.0/bluem
 `modernity` adds the Modernity-GTNH modded pack built for 2.9.0 and the vanilla pack of `out/modernity/` on top of it,
 in the order `modernity e2e` uses. BlueMap loads one set of packs per run, so each variant is a CLI run of its own
 into the same webroot. The default maps are `endgame_modernity`, `gt_multiblocks_modernity` and `endgame_default`.
+BlueMap's console and debug logs go to `out/site-demo/` (`bluemap-<texture>.log`, `bluemap-<texture>-debug.log`),
+its config (with copies of the packs) and data directory too, except where `out/` is on a file system shared with the
+host (the dev container's bind mount): there they go to `/tmp/bluemap-gtnh-site-demo/` (Node's `os.tmpdir()`),
+because BlueMap reads a pack entry by entry and each read through the host is a round trip (68 s to load the
+Modernity maps' packs from the bind mount on an idle machine, 13 minutes beside the oracle and e2e).
 
 - gzip file storage with the webapp's `client-decompression`, so the map data stays small and needs no web server
   configuration;

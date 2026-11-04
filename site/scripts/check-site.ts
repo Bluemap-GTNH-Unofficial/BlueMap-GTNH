@@ -168,9 +168,18 @@ async function main(): Promise<void> {
     const appearance = page.locator(".VPNavBarAppearance .VPSwitchAppearance");
     await appearance.click();
     check(await page.evaluate(() => document.documentElement.classList.contains("dark")), "dark mode: toggles on");
-    await page.waitForFunction(() => document.querySelectorAll(".vp-doc .mermaid svg").length >= 3, undefined, {
-      timeout: 30_000,
-    });
+    // the plugin re-renders every diagram on a theme change: wait until all three are SVG for 5 polls in a row (0.5 s),
+    // not just once (a count taken mid re-render saw 2 under load, 2026-11-03)
+    await page.waitForFunction(
+      () => {
+        const w = window as unknown as { __mermaidStable?: number };
+        const ok = document.querySelectorAll(".vp-doc .mermaid svg").length === 3;
+        w.__mermaidStable = ok ? (w.__mermaidStable ?? 0) + 1 : 0;
+        return w.__mermaidStable >= 5;
+      },
+      undefined,
+      { timeout: 30_000, polling: 100 },
+    );
     const diagrams = await page.locator(".vp-doc .mermaid svg").count();
     check(diagrams === 3, `mermaid: ${diagrams} diagrams rendered as SVG`);
     await page.locator(".vp-doc .mermaid").first().scrollIntoViewIfNeeded();

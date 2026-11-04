@@ -2,6 +2,10 @@
 aside: false
 ---
 
+<script setup>
+import { data as n } from "./data/results.data.ts";
+</script>
+
 # Demo
 
 > [!NOTE] Textures and takedown requests
@@ -75,9 +79,10 @@ missing from the map:
 
 The Modernity-GTNH look is checked against a real client running Modernity-GTNH and MyCTMLib, like the default look
 against the plain client. Connected textures (MyCTMLib sheets and GregTech's MCPatcher glass), hatches joining their
-casings, panes and layered Werkstoff blocks were fixed against that client. On the client oracle 76.5% of judged block
-states and 78.6% of judged block faces in five scene worlds match it (95.0% on the GregTech multiblocks); the
-[status page](/status#real-client-oracle) has the numbers per scene.
+casings, panes and layered Werkstoff blocks were fixed against that client. On the client oracle
+{{ n.states.modernity.rate }} of judged block states and {{ n.worlds.modernity.total.rate }} of judged block faces in
+{{ n.worlds.modernity.total.scenes }} scene worlds match it ({{ n.worlds.modernity.scenes["gt-multiblocks"].rate }} on
+the GregTech multiblocks); the [status page](/status#real-client-oracle) has the numbers per scene.
 
 ## Gallery
 

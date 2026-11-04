@@ -82,10 +82,7 @@ keep both in check:
 
 Results on 2.9.0:
 
-| | Detection | False failures |
-|---|---|---|
-| State oracle | 27,744 of 27,748 states whose two client renders differ are flagged (99.99%) | 6 of 233 colour calibration states (2.6%), 12 of 261 geometry calibration states (4.6%) |
-| World oracle (`vanilla-zoo`, `gt-multiblocks`, `gtnh-zoo`, both directions) | 5,222 of 6,549 faces whose two client captures differ (79.7%); 2,051 of 2,074 (98.9%) at a mean difference of 20 RGB levels or more, 2 of 167 at 1–2 levels | 2 of 3,220 faces the two clients draw alike (0.06%); 3 of 137 colour and 3 of 143 geometry calibration states of `vanilla-zoo` (2.2%) |
+<ResultsTable name="oracle-trust" />
 
 So a failure is almost always a real difference from the client, while the world oracle can miss small colour
 differences. These rates describe the thresholds, not BlueMap: how much of BlueMap passes is on the

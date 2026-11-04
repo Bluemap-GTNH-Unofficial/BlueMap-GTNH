@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type DefaultTheme } from "vitepress";
 import { withMermaid } from "vitepress-plugin-mermaid";
+import { type Snapshot, valueAt, values } from "../data/numbers.ts";
 
 // GitHub Pages serves the umbrella repository under /BlueMap-GTNH/; `SITE_BASE=/ pnpm build` for a root deployment.
 const base = process.env.SITE_BASE ?? "/BlueMap-GTNH/";
@@ -25,6 +26,26 @@ const ROOT_FILES: Record<string, string> = {
   "NOTICE.md": `${umbrella}/blob/main/NOTICE.md`,
   "README.md": `${umbrella}/blob/main/README.md`,
 };
+
+// `{{ n.<path> }}` in front matter (the home pages' features), which VitePress does not interpolate: the value of the
+// results snapshot (data/results-<pack>.json, data/numbers.ts), as in the page bodies (data/results.data.ts).
+let results: object | undefined;
+function withResults(value: unknown, srcDir: string): unknown {
+  if (typeof value === "string") {
+    if (!value.includes("{{")) return value;
+    if (!results) {
+      const file = path.join(srcDir, "data", `results-${process.env.BMGTNH_PACK_VERSION ?? "2.9.0"}.json`);
+      results = values(JSON.parse(fs.readFileSync(file, "utf8")) as Snapshot);
+    }
+    const v = results;
+    return value.replace(/\{\{\s*n\.([\w.-]+)\s*\}\}/g, (_, key: string) => valueAt(v, key));
+  }
+  if (Array.isArray(value)) return value.map((item) => withResults(item, srcDir));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, item]) => [k, withResults(item, srcDir)]));
+  }
+  return value;
+}
 
 // One sidebar for every page, so the groups and their order never change while navigating.
 const sidebar: DefaultTheme.SidebarItem[] = [
@@ -77,6 +98,7 @@ export default withMermaid(
       if (!pageData.lastUpdated) {
         pageData.lastUpdated = fs.statSync(path.join(siteConfig.srcDir, pageData.filePath)).mtimeMs;
       }
+      pageData.frontmatter = withResults(pageData.frontmatter, siteConfig.srcDir) as typeof pageData.frontmatter;
     },
     sitemap: { hostname: siteUrl },
     head: [

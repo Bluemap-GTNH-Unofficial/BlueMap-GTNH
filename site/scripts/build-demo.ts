@@ -34,7 +34,13 @@ const SITE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WS = path.resolve(process.env.BMGTNH_WORKSPACE ?? path.join(SITE, ".."));
 const DEMO = path.join(SITE, "public", "demo");
 const GALLERY = path.join(SITE, "public", "generated");
-const WORK = path.join(WS, "out", "site-demo");
+const LOGS = path.join(WS, "out", "site-demo"); // BlueMap's console and debug log of each CLI run
+// File system types reached through the host: the dev container's bind mount of the checkout (virtiofs from Windows),
+// Docker Desktop's file sharing, network shares (the list of e2e/src/e2e/oracle/reference.py, HOST_SHARED).
+const HOST_SHARED = ["virtiofs", "9p", "drvfs", "fakeowner", "fuse.grpcfuse", "osxfs", "nfs", "nfs4", "cifs", "smb3"];
+// BlueMap's config directory (with copies of the packs) and data directory (Minecraft client jars). BlueMap reads the
+// packs entry by entry; through the host every read is a round trip, so there they go to the local disk instead.
+const WORK = HOST_SHARED.includes(fileSystem(LOGS) ?? "") ? path.join(os.tmpdir(), "bluemap-gtnh-site-demo") : LOGS;
 const JAVA_TOOL = "java@temurin-25.0.5+8.0.LTS";
 const PACK_VERSION = "2.9.0"; // the GTNH pack the worlds, scene outputs, exported pack and Modernity pack are built on
 const WORLDS = path.join(WS, `worlds-${PACK_VERSION}`);
@@ -202,6 +208,7 @@ const { values: args } = parseArgs({
     build: { type: "boolean", default: false },
     maps: { type: "string", multiple: true },
     threads: { type: "string" },
+    pages: { type: "string" },
   },
 });
 
@@ -212,6 +219,26 @@ function fail(message: string): never {
 
 function log(message: string): void {
   console.log(`demo: ${message}`);
+}
+
+// The type of the file system `target` (existing or not) is on, from /proc/mounts (undefined without one, e.g. macOS).
+function fileSystem(target: string): string | undefined {
+  let mounts: string[];
+  try {
+    mounts = fs.readFileSync("/proc/mounts", "utf8").split("\n");
+  } catch {
+    return undefined;
+  }
+  let best = "";
+  let kind: string | undefined;
+  for (const line of mounts) {
+    const [, field, type] = line.split(" ");
+    if (!type) continue;
+    const mount = field.replaceAll("\\040", " ");
+    const inside = target === mount || target.startsWith(mount.endsWith("/") ? mount : `${mount}/`);
+    if (inside && mount.length >= best.length) [best, kind] = [mount, type];
+  }
+  return kind;
 }
 
 function selectedMaps(): DemoMap[] {
@@ -353,7 +380,7 @@ function writeConfig(maps: DemoMap[], texture: Texture, jars: { addons: string[]
     "render-thread-count": threads,
     "scan-for-mod-resources": false,
     metrics: false,
-    log: { file: path.join(data, "logs", `debug-${texture}.log`), append: false },
+    log: { file: path.join(LOGS, `bluemap-${texture}-debug.log`), append: false },
   });
   write("webapp.conf", {
     enabled: true,
@@ -409,8 +436,8 @@ function seedDownloads(): void {
 }
 
 function render(cli: string, config: string, texture: Texture): void {
-  const logFile = path.join(WORK, `bluemap-${texture}.log`);
-  log(`rendering the ${TEXTURE_NAMES[texture]} maps (log ${path.relative(WS, logFile)})`);
+  const logFile = path.join(LOGS, `bluemap-${texture}.log`);
+  log(`rendering the ${TEXTURE_NAMES[texture]} maps (log ${path.relative(WS, logFile)}, work directory ${WORK})`);
   const started = performance.now();
   const out = fs.openSync(logFile, "w");
   const result = spawnSync(java(), ["-jar", cli, "-c", config, "-v", "1.7.10", "-r", "-f", "-g"], {
@@ -770,7 +797,10 @@ async function capture(page: Page, file: string): Promise<{ width: number; heigh
   return { width: shot.width, height: shot.height };
 }
 
-async function gallery(maps: DemoMap[]): Promise<void> {
+// Each map's views are shot by up to `pages` pages side by side, each taking a contiguous run of them (neighbouring
+// machines, like one page going through all of them) after loading the map at the first. One page of software WebGL
+// kept about 14 of 32 CPUs busy and took 10.5 minutes for the 43 views on an idle machine.
+async function gallery(maps: DemoMap[], pages: number): Promise<void> {
   fs.rmSync(GALLERY, { recursive: true, force: true });
   fs.mkdirSync(GALLERY, { recursive: true });
   const server = await serve(DEMO);
@@ -793,43 +823,58 @@ async function gallery(maps: DemoMap[]): Promise<void> {
     await page.goto(`${server.url}index.html#${hash}`);
     return page;
   };
+  const shoot = async (page: Page, map: DemoMap, view: View): Promise<Shot> => {
+    const id = mapId(map);
+    let hash = `${id}:${view.camera}`;
+    if (view.aim) {
+      // load the tiles around the box first: the target height comes from them
+      await go(page, perspective(id, centreOf(view.aim.box), view.aim));
+      await settle(page, id);
+      let target = await aimTarget(page, view.aim);
+      for (let attempt = 1; ; attempt++) {
+        hash = perspective(id, target, view.aim);
+        await go(page, hash);
+        await settle(page, id);
+        const y = await targetY(page);
+        if (Math.abs(y - target[1]) <= 1) break;
+        if (attempt === 3 || Number.isNaN(y)) {
+          problems.push(`${view.file}: the camera target settled at y ${y.toFixed(1)}, not ${target[1].toFixed(1)}`);
+          break;
+        }
+        // the height controls also keep the camera above the terrain under it: refit around where it settled
+        target = [target[0], y, target[2]];
+      }
+    } else {
+      await go(page, hash);
+      await settle(page, id);
+    }
+    settled.set(view.file, await targetY(page));
+    const size = await capture(page, view.file);
+    const group = map.machines ? "endgame" : "gallery";
+    return { ...view, hash, map: id, texture: map.texture, group, ...size };
+  };
   try {
     for (const map of maps) {
       const id = mapId(map);
       const views = [...map.views, ...(map.machines ? machineViews(map.scene) : [])];
       if (views.length === 0) continue;
-      const page = await open(id, views[0].camera ? `${id}:${views[0].camera}` : id);
-      for (const view of views) {
-        let hash = `${id}:${view.camera}`;
-        if (view.aim) {
-          // load the tiles around the box first: the target height comes from them
-          await go(page, perspective(id, centreOf(view.aim.box), view.aim));
-          await settle(page, id);
-          let target = await aimTarget(page, view.aim);
-          for (let attempt = 1; ; attempt++) {
-            hash = perspective(id, target, view.aim);
-            await go(page, hash);
-            await settle(page, id);
-            const y = await targetY(page);
-            if (Math.abs(y - target[1]) <= 1) break;
-            if (attempt === 3 || Number.isNaN(y)) {
-              problems.push(`${view.file}: the camera target settled at y ${y.toFixed(1)}, not ${target[1].toFixed(1)}`);
-              break;
-            }
-            // the height controls also keep the camera above the terrain under it: refit around where it settled
-            target = [target[0], y, target[2]];
+      const taken: Shot[] = new Array(views.length);
+      const run = Math.ceil(views.length / Math.max(1, Math.min(pages, views.length)));
+      const runs: [number, number][] = [];
+      for (let first = 0; first < views.length; first += run) runs.push([first, Math.min(first + run, views.length)]);
+      await Promise.all(
+        runs.map(async ([first, end]) => {
+          const camera = views[first].camera;
+          const page = await open(id, camera ? `${id}:${camera}` : id);
+          try {
+            for (let i = first; i < end; i++) taken[i] = await shoot(page, map, views[i]);
+          } finally {
+            await page.context().close();
           }
-        } else {
-          await go(page, hash);
-          await settle(page, id);
-        }
-        settled.set(view.file, await targetY(page));
-        const size = await capture(page, view.file);
-        const group = map.machines ? "endgame" : "gallery";
-        shots.push({ ...view, hash, map: id, texture: map.texture, group, ...size });
-        if (map.machines && !start) start = hash; // the overview opens the live map
-      }
-      await page.context().close();
+        }),
+      );
+      shots.push(...taken);
+      if (map.machines && !start) start = taken[0].hash; // the overview opens the live map
     }
 
     // Modernity vs default: the same camera on the default-texture end-game map
@@ -896,6 +941,7 @@ async function main(): Promise<void> {
     const threads = Number(args.threads ?? Math.max(1, os.availableParallelism() - 2));
     fs.rmSync(DEMO, { recursive: true, force: true });
     fs.mkdirSync(WORK, { recursive: true });
+    fs.mkdirSync(LOGS, { recursive: true });
     seedDownloads();
     for (const texture of [...new Set(maps.map((m) => m.texture))]) {
       const config = writeConfig(
@@ -910,7 +956,8 @@ async function main(): Promise<void> {
   } else if (!fs.existsSync(path.join(DEMO, "settings.json"))) {
     fail("public/demo has not been rendered yet; run `pnpm demo` without --skip-render");
   }
-  await gallery(maps);
+  // pages of software WebGL side by side: one keeps about 14 of 32 CPUs busy
+  await gallery(maps, Number(args.pages ?? Math.max(1, Math.floor(os.availableParallelism() / 16))));
   for (const dir of [DEMO, GALLERY]) {
     log(`${path.relative(SITE, dir)}: ${(size(dir) / 1024 / 1024).toFixed(1)} MiB`);
   }

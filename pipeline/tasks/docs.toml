@@ -1,0 +1,25 @@
+# The numbers the documentation quotes (oracle pass rates, export counts, e2e views, scene counts) come from one
+# committed snapshot, site/data/results-2.9.0.json, which site/scripts/numbers.ts writes from the pipeline outputs; the
+# site renders it (site/data/results.data.ts) and the script rewrites the marked numbers of the READMEs from it.
+# `node site/scripts/numbers.ts --check` fails when they are stale. The swap tests it reads are not tasks: after a
+# recalibration, run `uv run --directory e2e e2e oracle swap-test` and `... e2e oracle world-swap-test` (90 s).
+
+["docs:numbers"]
+description = "Documentation numbers: out/ (oracle, exports, e2e, scene dumps) -> site/data/results-2.9.0.json and the marked numbers in README.md, e2e/, gtnh-exporter/ and modernity/README.md"
+wait_for = ["oracle", "export", "e2e", "scenes"]
+timeout = "2m"
+run = "node site/scripts/numbers.ts"
+sources = [
+  "site/scripts/numbers.ts", "site/data/numbers.ts",
+  "README.md", "e2e/README.md", "gtnh-exporter/README.md", "modernity/README.md",
+  "out/oracle-2.9.0/*/states/report.json", "out/oracle-2.9.0/default/states/calibration.json",
+  "out/oracle-2.9.0/default/states/swap-test.json",
+  "out/oracle-2.9.0/*/worlds/summary.json", "out/oracle-2.9.0/default/worlds/calibration.json",
+  "out/oracle-2.9.0/default/worlds/swap-test.json",
+  "out/exporter-2.9.0/export-report.json", "out/exporter-addons-2.9.0/export-report.json",
+  "out/modernity/export-modernity/export-report.json",
+  "out/e2e-2.9.0/*/report.json",
+  "out/scenes-2.9.0/{gt-machines,gt-pipes,gt-multiblocks,gt-ores}/dump.ndjson",
+  "out/scenes-2.9.0/gt-multiblocks/multiblocks.json",
+]
+outputs = ["site/data/results-2.9.0.json"]

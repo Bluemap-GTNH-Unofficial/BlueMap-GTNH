@@ -1,5 +1,9 @@
 # Export the resource pack
 
+<script setup>
+import { data as n } from "../data/results.data.ts";
+</script>
+
 Modded blocks in 1.7.10 are drawn by code, not by resource-pack models, so BlueMap cannot render them on its own. The
 [`gtnh-exporter`](https://github.com/Bluemap-GTNH-Unofficial/gtnh-exporter) client mod asks a running GTNH client how
 every registered block looks and writes the answer as a BlueMap resource pack. Vanilla blocks are rendered from
@@ -117,9 +121,10 @@ remove the old one when you switch.
 | No icon or an exception | nothing; the map draws a missing-texture cube and the report says why |
 
 GregTech machines, ores and frames also get a dump of GregTech's own texture data (`gtnh/gregtech/`), which the
-[GregTech renderers](/architecture#renderers) use. On 2.9.0 the export covers 4,087 blocks with 61,468 states from
-138 mods; 1,476 of these states could not be exported (`export-report.json` lists them per mod, with the reason) and
-draw as missing-texture cubes unless a dedicated renderer draws them. The format is documented in the
+[GregTech renderers](/architecture#renderers) use. On 2.9.0 the export covers {{ n.exports.default.blocks }} blocks
+with {{ n.exports.default.states }} states from {{ n.exports.default.mods }} mods; {{ n.exports.default.failed }} of
+these states could not be exported (`export-report.json` lists them per mod, with the reason) and draw as
+missing-texture cubes unless a dedicated renderer draws them. The format is documented in the
 [exporter README](https://github.com/Bluemap-GTNH-Unofficial/gtnh-exporter#what-is-exported).
 
 ## Optional: Modernity-GTNH look
@@ -129,5 +134,5 @@ The [`modernity`](https://github.com/Bluemap-GTNH-Unofficial/modernity) tool bui
 
 `modernity vanilla` converts its vanilla textures; `modernity modded` exports a 2.9.0 client with the release enabled.
 Connected-texture sheets, MCPatcher compact CTM, self-culling glass, hatch connections, panes and the layer order of
-werkstoff textures are handled. In the per-state oracle on 2.9.0, 76.5% of the judged block states pass with the
-Modernity packs (78.5% with the default export); see [status](/status).
+werkstoff textures are handled. In the per-state oracle on 2.9.0, {{ n.states.modernity.rate }} of the judged block
+states pass with the Modernity packs ({{ n.states.default.rate }} with the default export); see [status](/status).

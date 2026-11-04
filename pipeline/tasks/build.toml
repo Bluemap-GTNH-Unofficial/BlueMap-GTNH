@@ -2,17 +2,30 @@
 # while both hash the same as after its last successful run. Gradle runs through pipeline/gradlew (Java 25, plus the
 # Java 8 toolchain the GTNHGradle mods need). All builds share ~/.gradle: dependency cache, the RetroFuturaGradle
 # decompiled-Minecraft cache and the local build cache (`org.gradle.caching = true` in each mod's gradle.properties).
+#
+# One Gradle build per source tree at a time: two builds in one tree would write the same build/ directories. The
+# BlueMap tree is the fork's build and the server mod's (it includes the fork as a composite build), plus `verify`
+# and the state oracle (their Gradle tasks run in BlueMap/). Within a run its tasks are chained with `wait_for` in
+# this order: build-fork (with the fork's unit tests), build-servermod (its `build` also runs the server mod's
+# tests), verify, oracle:states-default, oracle:states-modernity; across runs each holds the lock in
+# BMGTNH_TASK_LOCKS (pipeline/steps.py shell). The exporter and the harness are trees of their own and build
+# alongside.
+# Timeouts: about 3x the cold builds measured in the container (fork 2.6 min, server mod 7.5 min with the Minecraft
+# decompilation, exporter 4.5 min).
 
 ["build-fork"]
-description = "BlueMap fork: CLI shadow jar and the legacy + gtnh-render addon jars (used by e2e, the oracle and the site demo)"
-run = "cd BlueMap && ../pipeline/gradlew :cli:shadowJar :legacy:addonJar :gtnh-render:addonJar"
+description = "BlueMap fork: CLI shadow jar and the legacy + gtnh-render addon jars (used by e2e, the oracle and the site demo), plus the fork's unit tests (:legacy:test, :gtnh-render:test, :oracle:test) in the same Gradle run"
+run = "cd BlueMap && ../pipeline/gradlew :cli:shadowJar :legacy:addonJar :gtnh-render:addonJar :legacy:test :gtnh-render:test :oracle:test"
+env = { BMGTNH_TASK_LOCKS = "gradle-BlueMap" }
+timeout = "25m"
 sources = [
   "BlueMap/api/src/main/**", "BlueMap/api/*.gradle.kts", "BlueMap/api/buildSrc/src/**", "BlueMap/api/buildSrc/*.gradle.kts",
   "BlueMap/core/src/main/**", "BlueMap/core/build.gradle.kts",
   "BlueMap/common/src/main/**", "BlueMap/common/build.gradle.kts",
   "BlueMap/common/webapp/src/**", "BlueMap/common/webapp/public/**", "BlueMap/common/webapp/*.{html,js,json}",
-  "BlueMap/legacy/src/main/**", "BlueMap/legacy/build.gradle.kts",
-  "BlueMap/gtnh-render/src/main/**", "BlueMap/gtnh-render/build.gradle.kts",
+  "BlueMap/legacy/src/**", "BlueMap/legacy/build.gradle.kts",
+  "BlueMap/gtnh-render/src/**", "BlueMap/gtnh-render/build.gradle.kts",
+  "BlueMap/oracle/src/**", "BlueMap/oracle/build.gradle.kts",
   "BlueMap/implementations/cli/src/main/**", "BlueMap/implementations/cli/build.gradle.kts",
   "BlueMap/buildSrc/src/**", "BlueMap/buildSrc/*.gradle.kts",
   "BlueMap/*.gradle.kts", "BlueMap/gradle.properties", "BlueMap/gradle/**",
@@ -26,6 +39,9 @@ outputs = [
 ["build-servermod"]
 description = "Forge 1.7.10 server mod (BlueMap/implementations/gtnh, GTNHGradle; shades common, legacy and gtnh-render)"
 run = "cd BlueMap/implementations/gtnh && ../../../pipeline/gradlew build"
+env = { BMGTNH_TASK_LOCKS = "gradle-BlueMap" }
+wait_for = ["build-fork"]
+timeout = "25m"
 sources = [
   "BlueMap/implementations/gtnh/src/**", "BlueMap/implementations/gtnh/*.gradle*",
   "BlueMap/implementations/gtnh/gradle.properties", "BlueMap/implementations/gtnh/gradle/**",
@@ -43,6 +59,8 @@ outputs = ["BlueMap/implementations/gtnh/build/libs/bluemap-*.jar", "!BlueMap/im
 ["build-exporter"]
 description = "Exporter client mod (gtnh-exporter, GTNHGradle; compiles the fork's legacy ResourceKeys.kt in verbatim)"
 run = "cd gtnh-exporter && ../pipeline/gradlew build"
+env = { BMGTNH_TASK_LOCKS = "gradle-gtnh-exporter" }
+timeout = "25m"
 sources = [
   "gtnh-exporter/src/main/**", "gtnh-exporter/*.gradle*", "gtnh-exporter/gradle.properties", "gtnh-exporter/gradle/**",
   "BlueMap/legacy/src/main/kotlin/de/bluecolored/bluemap/gtnh/legacy/ResourceKeys.kt",
@@ -55,6 +73,9 @@ run = [
   "cd harness && ../pipeline/gradlew build",
   "python3 pipeline/steps.py install harness/build/libs bmh servers/gtnh-$BMGTNH_PACK_VERSION servers/gtnh-addons-$BMGTNH_PACK_VERSION",
 ]
+# the scenes run it as their first step, possibly two at once (one per server): the lock makes the second one wait
+env = { BMGTNH_TASK_LOCKS = "gradle-harness" }
+timeout = "25m"
 sources = ["harness/src/main/**", "harness/*.gradle*", "harness/gradle.properties", "harness/gradle/**"]
 outputs = [
   "harness/build/libs/bmh-*.jar", "!harness/build/libs/*-{dev,sources}.jar",

@@ -46,7 +46,7 @@ scenes = ["addons-zoo", "addons-machines", "addons-multiblocks", "addons-tesr"]
 paths = ["BlueMap/gtnh-render/src/main/kotlin/de/bluecolored/bluemap/gtnh/render/gregtech/**"]
 tasks = ["test:gtnh-render"]
 scenes = [
-  "gt-machines", "gt-pipes", "gt-ores", "gt-multiblocks", "gtnh-zoo",
+  "gt-machines", "gt-pipes", "gt-ores", "gt-multiblocks", "endgame", "gtnh-zoo",
   "addons-machines", "addons-multiblocks", "addons-tesr",
 ]
 

@@ -1,11 +1,15 @@
-# Scene worlds, built by the orchestrator on a headless GTNH server with the bmh harness (one server at a time; the
-# workspace runs tasks with jobs = 1). Outputs: the dump and the snapshot's level.dat (not scene.json, which `verify`
-# rewrites). Sources: the orchestrator modules the scene uses, the server's mod jars (with the installed bmh jar) and
-# the harness sources (a scene runs build-harness first, which installs a changed bmh jar).
+# Scene worlds, built by the orchestrator on a headless GTNH server with the bmh harness. One scene per server at a
+# time (its level folder and ports): within a run the scenes of a server are chained with `wait_for`, across runs
+# `orch scene` holds WS/locks/server-<server>.lock. The reference server (gtnh-2.9.0, ports 25565/25575) and the addon
+# server (gtnh-addons-2.9.0, 25572/25582) build their scenes side by side. Outputs: the dump and the snapshot's
+# level.dat (not scene.json, which `verify` rewrites). Sources: the orchestrator modules the scene uses, the server's
+# mod jars (with the installed bmh jar) and the harness sources (a scene runs build-harness first, which installs a
+# changed bmh jar). Timeouts: about 3x the slowest scene measured (gt-pipes, 166 s with the server start).
 
 ["scene:vanilla-zoo"]
 description = "Scene vanilla-zoo: every vanilla block variant on a grid -> out/scenes-2.9.0/vanilla-zoo/, worlds-2.9.0/vanilla-zoo/ (server gtnh-2.9.0)"
 wait_for = ["build-harness"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/vanilla-zoo/dump.ndjson worlds-2.9.0/vanilla-zoo/level.dat -- uv run --directory orchestrator orch scene vanilla-zoo",
@@ -20,7 +24,8 @@ outputs = ["out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo
 
 ["scene:gtnh-zoo"]
 description = "Scene gtnh-zoo: every registered block variant of the pack on a grid -> out/scenes-2.9.0/gtnh-zoo/, worlds-2.9.0/gtnh-zoo/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/gtnh-zoo/dump.ndjson worlds-2.9.0/gtnh-zoo/level.dat -- uv run --directory orchestrator orch scene gtnh-zoo",
@@ -35,7 +40,8 @@ outputs = ["out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level
 
 ["scene:gt-machines"]
 description = "Scene gt-machines: every single-block GregTech MTE -> out/scenes-2.9.0/gt-machines/, worlds-2.9.0/gt-machines/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/gt-machines/dump.ndjson worlds-2.9.0/gt-machines/level.dat -- uv run --directory orchestrator orch scene gt-machines",
@@ -50,7 +56,8 @@ outputs = ["out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines
 
 ["scene:gt-pipes"]
 description = "Scene gt-pipes: every GregTech pipe, cable and frame -> out/scenes-2.9.0/gt-pipes/, worlds-2.9.0/gt-pipes/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/gt-pipes/dump.ndjson worlds-2.9.0/gt-pipes/level.dat -- uv run --directory orchestrator orch scene gt-pipes",
@@ -65,7 +72,8 @@ outputs = ["out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level
 
 ["scene:gt-ores"]
 description = "Scene gt-ores: every GregTech ore material on its stones -> out/scenes-2.9.0/gt-ores/, worlds-2.9.0/gt-ores/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/gt-ores/dump.ndjson worlds-2.9.0/gt-ores/level.dat -- uv run --directory orchestrator orch scene gt-ores",
@@ -80,7 +88,8 @@ outputs = ["out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.d
 
 ["scene:gt-multiblocks"]
 description = "Scene gt-multiblocks: GT, GT++, bartworks, TecTech and kekztech multiblocks -> out/scenes-2.9.0/gt-multiblocks/, worlds-2.9.0/gt-multiblocks/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/gt-multiblocks/dump.ndjson worlds-2.9.0/gt-multiblocks/level.dat -- uv run --directory orchestrator orch scene gt-multiblocks",
@@ -95,7 +104,8 @@ outputs = ["out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multi
 
 ["scene:terrain-rwg"]
 description = "Scene terrain-rwg: Realistic World Gen terrain, seed 1710 -> out/scenes-2.9.0/terrain-rwg/, worlds-2.9.0/terrain-rwg/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/terrain-rwg/dump.ndjson worlds-2.9.0/terrain-rwg/level.dat -- uv run --directory orchestrator orch scene terrain-rwg",
@@ -110,7 +120,8 @@ outputs = ["out/scenes-2.9.0/terrain-rwg/dump.ndjson", "worlds-2.9.0/terrain-rwg
 
 ["scene:mod-renderers"]
 description = "Scene mod-renderers: Chisel CTM, Iron Chests, BiblioCraft, AE2, EnderIO -> out/scenes-2.9.0/mod-renderers/, worlds-2.9.0/mod-renderers/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:terrain-rwg"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/mod-renderers/dump.ndjson worlds-2.9.0/mod-renderers/level.dat -- uv run --directory orchestrator orch scene mod-renderers",
@@ -125,7 +136,8 @@ outputs = ["out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-rende
 
 ["scene:endgame"]
 description = "Scene endgame: the site demo's end-game plaza -> out/scenes-2.9.0/endgame/, worlds-2.9.0/endgame/ (server gtnh-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:terrain-rwg", "scene:mod-renderers"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/endgame/dump.ndjson worlds-2.9.0/endgame/level.dat -- uv run --directory orchestrator orch scene endgame",
@@ -141,6 +153,7 @@ outputs = ["out/scenes-2.9.0/endgame/dump.ndjson", "worlds-2.9.0/endgame/level.d
 ["scene:addons-zoo"]
 description = "Scene addons-zoo: community addons: every block variant -> out/scenes-2.9.0/addons-zoo/, worlds-2.9.0/addons-zoo/ (server gtnh-addons-2.9.0)"
 wait_for = ["build-harness"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/addons-zoo/dump.ndjson worlds-2.9.0/addons-zoo/level.dat -- uv run --directory orchestrator orch --server gtnh-addons-2.9.0 --port 25572 --rcon-port 25582 scene addons-zoo",
@@ -156,7 +169,8 @@ outputs = ["out/scenes-2.9.0/addons-zoo/dump.ndjson", "worlds-2.9.0/addons-zoo/l
 
 ["scene:addons-machines"]
 description = "Scene addons-machines: community addons: every MTE -> out/scenes-2.9.0/addons-machines/, worlds-2.9.0/addons-machines/ (server gtnh-addons-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:addons-zoo"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/addons-machines/dump.ndjson worlds-2.9.0/addons-machines/level.dat -- uv run --directory orchestrator orch --server gtnh-addons-2.9.0 --port 25572 --rcon-port 25582 scene addons-machines",
@@ -172,7 +186,8 @@ outputs = ["out/scenes-2.9.0/addons-machines/dump.ndjson", "worlds-2.9.0/addons-
 
 ["scene:addons-multiblocks"]
 description = "Scene addons-multiblocks: community addons: multiblocks and TESR blocks -> out/scenes-2.9.0/addons-multiblocks/, worlds-2.9.0/addons-multiblocks/ (server gtnh-addons-2.9.0)"
-wait_for = ["build-harness"]
+wait_for = ["build-harness", "scene:addons-zoo", "scene:addons-machines"]
+timeout = "10m"
 run = [
   { task = "build-harness" },
   "python3 pipeline/steps.py adopt out/scenes-2.9.0/addons-multiblocks/dump.ndjson worlds-2.9.0/addons-multiblocks/level.dat -- uv run --directory orchestrator orch --server gtnh-addons-2.9.0 --port 25572 --rcon-port 25582 scene addons-multiblocks",
@@ -192,10 +207,24 @@ depends = ["scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt
 
 ["verify"]
 description = "Reader reconciliation: :legacy:verifyDump of every scene snapshot against its dump (result into scene.json); fails on any mismatch"
-wait_for = ["scenes", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:terrain-rwg", "scene:mod-renderers", "scene:endgame", "scene:addons-zoo", "scene:addons-machines", "scene:addons-multiblocks"]
-run = "for s in vanilla-zoo gtnh-zoo gt-machines gt-pipes gt-ores gt-multiblocks terrain-rwg mod-renderers endgame addons-zoo addons-machines addons-multiblocks; do uv run --directory orchestrator orch verify $s || exit 1; done"
+wait_for = [
+  "scenes", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:terrain-rwg", "scene:mod-renderers", "scene:endgame", "scene:addons-zoo", "scene:addons-machines", "scene:addons-multiblocks",
+  "build-fork", "build-servermod",
+]
+# `orch verify` runs Gradle in BlueMap/ (:legacy:verifyDump): one run checks all 12 scenes side by side, its output
+# streamed (19-26 s measured, one Gradle run per scene took 300 s); the BlueMap tree's chain and lock. Timeout: about
+# 3x a fork build that has to configure and compile first.
+env = { BMGTNH_TASK_LOCKS = "gradle-BlueMap" }
+timeout = "10m"
+run = "uv run --directory orchestrator orch verify vanilla-zoo gtnh-zoo gt-machines gt-pipes gt-ores gt-multiblocks terrain-rwg mod-renderers endgame addons-zoo addons-machines addons-multiblocks"
 sources = [
   "BlueMap/core/src/main/**", "BlueMap/legacy/src/main/**", "BlueMap/legacy/build.gradle.kts",
   "orchestrator/src/orchestrator/cli.py",
-  "out/scenes-2.9.0/*/dump.ndjson", "worlds-2.9.0/*/level.dat", "worlds-2.9.0/**/*.mca",
+  "out/scenes-2.9.0/*/dump.ndjson",
+  # every scene world by name, its region files by directory (pipeline/tasks/e2e.toml, e2e, has why)
+  "worlds-2.9.0/addons-machines/level.dat", "worlds-2.9.0/addons-multiblocks/level.dat", "worlds-2.9.0/addons-zoo/level.dat",
+  "worlds-2.9.0/endgame/level.dat", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-multiblocks/level.dat",
+  "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gtnh-zoo/level.dat",
+  "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/terrain-rwg/level.dat", "worlds-2.9.0/vanilla-zoo/level.dat",
+  "worlds-2.9.0/{addons-machines,addons-multiblocks,addons-zoo,endgame,gt-machines,gt-multiblocks,gt-ores,gt-pipes,gtnh-zoo,mod-renderers,terrain-rwg,vanilla-zoo}/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
 ]

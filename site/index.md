@@ -34,7 +34,7 @@ features:
     link: /architecture#vanilla-flattening
     linkText: Flattening
   - title: Modded blocks from your client
-    details: A one-shot client mod exports how every block state looks (4,087 blocks, 61,468 states from 138 mods) into a resource pack. Ready 2.9.0 packs are attached to the releases (base pack for plain servers, addon pack for the five supported addons); export your own if your modlist differs.
+    details: A one-shot client mod exports how every block state looks ({{ n.exports.default.blocks }} blocks, {{ n.exports.default.states }} states from {{ n.exports.default.mods }} mods) into a resource pack. Ready 2.9.0 packs are attached to the releases (base pack for plain servers, addon pack for the five supported addons); export your own if your modlist differs.
     link: /guide/export
     linkText: Get the pack
   - title: GregTech, drawn properly
@@ -51,6 +51,10 @@ features:
     linkText: Maps and commands
 ---
 
+<script setup>
+import { data as n } from "./data/results.data.ts";
+</script>
+
 <div class="home-content">
 
 ## Status
@@ -61,8 +65,8 @@ numbers below were measured on GTNH 2.9.0, on one machine.
 <div class="status-grid">
   <div class="stat"><span class="value">0</span><span class="label">mismatches between the world reader and the live server, 12 scenes</span></div>
   <div class="stat"><span class="value">91.52%</span><span class="label">of placed modded states in the <code>gtnh-zoo</code> scene render with their own model</span></div>
-  <div class="stat"><span class="value">78.5%</span><span class="label">of 61,513 judged block states match the real GTNH client (76.5% with Modernity-GTNH)</span></div>
-  <div class="stat"><span class="value">77.4%</span><span class="label">of 18,437 visible block faces in seven scene worlds match the real client</span></div>
+  <div class="stat"><span class="value">{{ n.states.default.rate }}</span><span class="label">of {{ n.states.default.judged }} judged block states match the real GTNH client ({{ n.states.modernity.rate }} with Modernity-GTNH)</span></div>
+  <div class="stat"><span class="value">{{ n.worlds.default.total.rate }}</span><span class="label">of {{ n.worlds.default.total.judged }} visible block faces in {{ n.worlds.default.total.scenes }} scene worlds match the real client</span></div>
 </div>
 
 The [client oracle](/development/oracle) compares the map with the real GTNH client under thresholds calibrated on

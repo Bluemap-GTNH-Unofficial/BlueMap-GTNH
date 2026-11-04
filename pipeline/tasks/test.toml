@@ -1,46 +1,30 @@
 # Unit suites. No outputs: mise keeps a marker per suite and skips it while its sources hash as after its last
-# passing run. `mise run test` runs every suite; `mise run check` runs the suites a change affects.
-
+# passing run. `mise run test` runs every suite; `mise run check` runs the suites a change affects. The Gradle suites
+# are part of the builds: the fork's three suites run in build-fork's Gradle run (one configuration of the BlueMap
+# build instead of four: the three suites rerun together took 25.8 s, one at a time 75.2 s) and the server mod's in
+# build-servermod's `build`; their names here depend on those builds, for `mise run check` (pipeline/affected.toml).
+# The pytest suites run alongside everything. Timeouts: about 3x the cold runs measured in the container (under 30 s
+# with uv creating the environment).
 ["test:legacy"]
-description = "BlueMap fork :legacy:test (1.7.10 world reader, flattening, resource keys)"
-run = "cd BlueMap && ../pipeline/gradlew :legacy:test"
-sources = [
-  "BlueMap/legacy/src/**", "BlueMap/legacy/build.gradle.kts",
-  "BlueMap/core/src/main/**", "BlueMap/core/build.gradle.kts",
-  "BlueMap/buildSrc/src/**", "BlueMap/buildSrc/*.gradle.kts", "BlueMap/*.gradle.kts", "BlueMap/gradle.properties", "BlueMap/gradle/**",
-]
+description = "BlueMap fork :legacy:test (1.7.10 world reader, flattening, resource keys), run by build-fork"
+depends = ["build-fork"]
 
 ["test:gtnh-render"]
-description = "BlueMap fork :gtnh-render:test (GregTech and mod renderers)"
-run = "cd BlueMap && ../pipeline/gradlew :gtnh-render:test"
-sources = [
-  "BlueMap/gtnh-render/src/**", "BlueMap/gtnh-render/build.gradle.kts",
-  "BlueMap/legacy/src/main/**", "BlueMap/legacy/build.gradle.kts",
-  "BlueMap/core/src/main/**", "BlueMap/core/build.gradle.kts",
-  "BlueMap/buildSrc/src/**", "BlueMap/buildSrc/*.gradle.kts", "BlueMap/*.gradle.kts", "BlueMap/gradle.properties", "BlueMap/gradle/**",
-]
+description = "BlueMap fork :gtnh-render:test (GregTech and mod renderers), run by build-fork"
+depends = ["build-fork"]
 
 ["test:fork-oracle"]
-description = "BlueMap fork :oracle:test (BlueMap side of the per-state oracle)"
-run = "cd BlueMap && ../pipeline/gradlew :oracle:test"
-sources = [
-  "BlueMap/oracle/src/**", "BlueMap/oracle/build.gradle.kts",
-  "BlueMap/gtnh-render/src/main/**", "BlueMap/legacy/src/main/**", "BlueMap/core/src/main/**",
-  "BlueMap/buildSrc/src/**", "BlueMap/buildSrc/*.gradle.kts", "BlueMap/*.gradle.kts", "BlueMap/gradle.properties", "BlueMap/gradle/**",
-]
+description = "BlueMap fork :oracle:test (BlueMap side of the per-state oracle), run by build-fork"
+depends = ["build-fork"]
 
 ["test:servermod"]
-description = "Server mod unit tests (BlueMap/implementations/gtnh, GTNHGradle)"
-run = "cd BlueMap/implementations/gtnh && ../../../pipeline/gradlew test"
-sources = [
-  "BlueMap/implementations/gtnh/src/**", "BlueMap/implementations/gtnh/*.gradle*",
-  "BlueMap/implementations/gtnh/gradle.properties", "BlueMap/implementations/gtnh/gradle/**",
-  "BlueMap/common/src/main/**", "BlueMap/legacy/src/main/**", "BlueMap/gtnh-render/src/main/**", "BlueMap/core/src/main/**",
-]
+description = "Server mod unit tests (BlueMap/implementations/gtnh, GTNHGradle): build-servermod's `gradlew build` runs them (build = jar + test), so a run with both starts the composite build once"
+depends = ["build-servermod"]
 
 ["test:launcher"]
 description = "gtnh-client launcher pytest (gtnh-exporter/launcher)"
 run = "uv run --directory gtnh-exporter/launcher pytest -q"
+timeout = "5m"
 sources = [
   "gtnh-exporter/launcher/src/**", "gtnh-exporter/launcher/tests/**", "!gtnh-exporter/launcher/**/__pycache__/**",
   "gtnh-exporter/launcher/pyproject.toml", "gtnh-exporter/launcher/uv.lock",
@@ -49,6 +33,7 @@ sources = [
 ["test:orchestrator"]
 description = "orchestrator pytest"
 run = "uv run --directory orchestrator --group dev pytest -q"
+timeout = "5m"
 sources = [
   "orchestrator/src/**", "orchestrator/tests/**", "!orchestrator/**/__pycache__/**",
   "orchestrator/pyproject.toml", "orchestrator/uv.lock",
@@ -57,6 +42,7 @@ sources = [
 ["test:e2e"]
 description = "e2e unit tests (pytest -m 'not e2e': metrics, scenes, oracle logic; no browser renders)"
 run = "uv run --directory e2e --group dev pytest -q -m 'not e2e'"
+timeout = "5m"
 sources = [
   "e2e/src/**", "e2e/tests/**", "!e2e/**/__pycache__/**", "e2e/scenes/**", "e2e/oracle/**",
   "e2e/pyproject.toml", "e2e/uv.lock",
@@ -65,6 +51,7 @@ sources = [
 ["test:modernity"]
 description = "modernity pytest"
 run = "uv run --directory modernity --group dev pytest -q"
+timeout = "5m"
 sources = [
   "modernity/src/**", "modernity/tests/**", "modernity/data/**", "!modernity/**/__pycache__/**",
   "modernity/pyproject.toml", "modernity/uv.lock",
@@ -73,6 +60,7 @@ sources = [
 ["test:pipeline"]
 description = "Tests of the workspace pipeline itself (pipeline/check.py change mapping, pipeline/steps.py)"
 run = "uv run --no-project --python '>=3.13' --with pytest python -m pytest -q -p no:cacheprovider pipeline"
+timeout = "5m"
 sources = ["pipeline/*.py", "pipeline/affected.toml", "pipeline/tasks/*.toml", "mise.toml"]
 
 ["test"]

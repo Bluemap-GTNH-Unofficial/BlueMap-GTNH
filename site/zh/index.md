@@ -30,7 +30,7 @@ features:
   - title: 原版方块扁平化
     details: 1.7.10 的 ID 与 meta 转换为 1.13 方块状态，包括依赖相邻方块的形状。与 Minecraft 1.13.2 官方升级结果在 905,216 个位置上逐一对比。
   - title: 从你自己的客户端导出模组方块
-    details: 一次性客户端模组导出每个方块状态的外观（138 个模组的 4,087 个方块、61,468 个状态），生成资源包。为方便起见，发布页附带两个现成的 2.9.0 资源包：基础包（bluemap-gtnh-resources-2.9.0.zip）适用于纯净的 GTNH 2.9.0 服务端，附属包（bluemap-gtnh-resources-2.9.0-addons.zip）适用于装有五个受支持附属模组的服务端。其纹理归原作者所有，仅限非商业用途，权利人可申请下架；若你的模组列表不同，建议自行导出。
+    details: 一次性客户端模组导出每个方块状态的外观（{{ n.exports.default.mods }} 个模组的 {{ n.exports.default.blocks }} 个方块、{{ n.exports.default.states }} 个状态），生成资源包。为方便起见，发布页附带两个现成的 2.9.0 资源包：基础包（bluemap-gtnh-resources-2.9.0.zip）适用于纯净的 GTNH 2.9.0 服务端，附属包（bluemap-gtnh-resources-2.9.0-addons.zip）适用于装有五个受支持附属模组的服务端。其纹理归原作者所有，仅限非商业用途，权利人可申请下架；若你的模组列表不同，建议自行导出。
   - title: 格雷科技专用渲染
     details: 为格雷科技机器、管道、线缆、矿石和框架编写的专用渲染器，包括成型的多方块结构；另有连接纹理、铁箱子、AE2 线缆和 EnderIO 导管。
   - title: 社区附属模组
@@ -38,6 +38,10 @@ features:
   - title: 运行在你的服务端里
     details: 每个有区域文件的维度自动生成一张地图，存档保存后瓦片随之更新，在线玩家显示在地图上，/bluemap 命令可在游戏内和 RCON 中使用。
 ---
+
+<script setup>
+import { data as n } from "../data/results.data.ts";
+</script>
 
 <div class="home-content">
 
@@ -56,8 +60,8 @@ features:
 <div class="status-grid">
   <div class="stat"><span class="value">0</span><span class="label">处读取器与运行中服务端的不一致（12 个场景）</span></div>
   <div class="stat"><span class="value">91.52%</span><span class="label"><code>gtnh-zoo</code> 场景中已放置的模组方块状态使用自身模型渲染</span></div>
-  <div class="stat"><span class="value">78.5%</span><span class="label">的 61,513 个参与判定的方块状态与真实 GTNH 客户端一致（Modernity-GTNH 为 76.5%）</span></div>
-  <div class="stat"><span class="value">77.4%</span><span class="label">的可见方块面与真实客户端一致（7 个场景世界，共 18,437 个参与判定的面）</span></div>
+  <div class="stat"><span class="value">{{ n.states.default.rate }}</span><span class="label">的 {{ n.states.default.judged }} 个参与判定的方块状态与真实 GTNH 客户端一致（Modernity-GTNH 为 {{ n.states.modernity.rate }}）</span></div>
+  <div class="stat"><span class="value">{{ n.worlds.default.total.rate }}</span><span class="label">的可见方块面与真实客户端一致（{{ n.worlds.default.total.scenes }} 个场景世界，共 {{ n.worlds.default.total.judged }} 个参与判定的面）</span></div>
 </div>
 
 [客户端对照检查](/development/oracle)（client oracle）把地图与真实 GTNH 客户端的画面逐方块状态、逐可见方块面对比，判定阈值由数据校准，而非手工调整。浏览器截图检查只是把渲染结果与本地人工批准过的旧渲染结果对比：它能发现变化，不能证明渲染正确。可选的 Modernity-GTNH 外观也用同样的方法检查。

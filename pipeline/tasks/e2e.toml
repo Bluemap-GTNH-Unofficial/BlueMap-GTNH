@@ -1,9 +1,15 @@
 # Browser regression views (e2e run) and the site. Exports and scenes are ordered with wait_for, as in oracle.toml.
+# None of these holds an exclusive resource (BlueMap CLI and Playwright runs on free ports, `--no-build`: no Gradle), so
+# they run alongside the client and Gradle chains. Timeouts are generous upper bounds, not yet 3x a measured
+# container run. e2e runs with `nice -n 10` like the oracle tasks (see oracle.toml): the demo and the site are the
+# critical path; e2e runs 3 scenes at a time (`e2e run --jobs`, CPUs / 10) and ends long before them.
 
 ["e2e"]
 description = "e2e regression: render every scene that has local baselines (baselines-2.9.0/<scene>/) and compare its views -> out/e2e-2.9.0/<scene>/report.json"
 depends = ["build-fork"]
 wait_for = ["export:default", "export:addons", "scenes"]
+timeout = "2h"
+env = { BMGTNH_TASK_NICE = "10" }
 run = '''
 python3 pipeline/steps.py adopt 'out/e2e-2.9.0/*/report.json' -- \
   uv run --directory e2e e2e run --no-build $(ls baselines-2.9.0)
@@ -14,13 +20,22 @@ sources = [
   "e2e/src/e2e/*.py", "e2e/scenes/*.yaml", "e2e/pyproject.toml", "e2e/uv.lock",
   "baselines-2.9.0/**",
   "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip", "out/exporter-addons-2.9.0/bluemap-gtnh-resources-2.9.0-addons.zip",
-  "worlds-2.9.0/*/level.dat", "worlds-2.9.0/**/*.mca",
+  # every scene world (scene:* outputs) by name and its region files by directory: mise walks every directory below a
+  # pattern's literal prefix and stats each entry twice by absolute path, so `worlds-2.9.0/**/*.mca` went through each
+  # world's ~250 directories of mod data on the bind mount (about 1 s per world, again for every task listing it).
+  # Region files are only in region/ and DIM<n>/region/; pipeline/test_pipeline.py checks these lists.
+  "worlds-2.9.0/addons-machines/level.dat", "worlds-2.9.0/addons-multiblocks/level.dat", "worlds-2.9.0/addons-zoo/level.dat",
+  "worlds-2.9.0/endgame/level.dat", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-multiblocks/level.dat",
+  "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gtnh-zoo/level.dat",
+  "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/terrain-rwg/level.dat", "worlds-2.9.0/vanilla-zoo/level.dat",
+  "worlds-2.9.0/{addons-machines,addons-multiblocks,addons-zoo,endgame,gt-machines,gt-multiblocks,gt-ores,gt-pipes,gtnh-zoo,mod-renderers,terrain-rwg,vanilla-zoo}/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
 ]
 outputs = ["out/e2e-2.9.0/*/report.json"]
 
 ["site:deps"]
 description = "pnpm install of the site (site/node_modules)"
 run = "cd site && pnpm install --frozen-lockfile"
+timeout = "15m"
 sources = ["site/package.json", "site/pnpm-lock.yaml", "site/pnpm-workspace.yaml"]
 outputs = ["site/node_modules/.modules.yaml"]
 
@@ -28,6 +43,7 @@ outputs = ["site/node_modules/.modules.yaml"]
 description = "Site demo: maps of the end-game plaza and gt-multiblocks -> site/public/demo/, gallery screenshots -> site/public/generated/"
 depends = ["build-fork", "site:deps"]
 wait_for = ["export:default", "export:modernity", "export:modernity-vanilla", "scene:endgame", "scene:gt-multiblocks"]
+timeout = "2h"
 run = "python3 pipeline/steps.py adopt site/public/demo/settings.json site/public/generated/gallery.json -- sh -c 'cd site && pnpm demo'"
 sources = [
   "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
@@ -35,19 +51,23 @@ sources = [
   "site/scripts/build-demo.ts",
   "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
   "out/modernity/modernity-*-modded-2.9.0.zip", "out/modernity/modernity-*-vanilla-1.13.zip",
-  "out/scenes-2.9.0/endgame/dump.ndjson", "worlds-2.9.0/endgame/level.dat", "worlds-2.9.0/endgame/**/*.mca",
-  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/**/*.mca",
+  "out/scenes-2.9.0/endgame/dump.ndjson", "worlds-2.9.0/endgame/level.dat",
+  "worlds-2.9.0/endgame/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat",
+  "worlds-2.9.0/gt-multiblocks/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
 ]
 outputs = ["site/public/demo/settings.json", "site/public/generated/gallery.json"]
 
 ["site"]
 description = "Documentation site: vitepress build -> site/.vitepress/dist/, then the Playwright smoke check (pnpm check)"
 depends = ["site:deps"]
-wait_for = ["demo"]
-run = "cd site && pnpm build && pnpm check"
+wait_for = ["demo", "docs:numbers"]
+timeout = "30m"
+run = "cd site && node scripts/numbers.ts --check && pnpm build && pnpm check"
 sources = [
   "site/*.md", "site/guide/**", "site/development/**", "site/zh/**",
   "site/.vitepress/config.mts", "site/.vitepress/theme/**", "site/scripts/check-site.ts",
   "site/public/logo.svg", "site/public/demo/settings.json", "site/public/generated/gallery.json",
+  "site/data/**", "site/scripts/numbers.ts",
 ]
 outputs = ["site/.vitepress/dist/index.html"]

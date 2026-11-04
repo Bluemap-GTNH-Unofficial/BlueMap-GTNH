@@ -2,12 +2,25 @@
 # miss starts a client (`gtnh-client cameras --jobs`, one client run per variant). Sources: the BlueMap jars, e2e's
 # oracle code and scene definitions, the launcher's capture version, the variant's client mods and packs and the
 # scene dumps and worlds. Exports and scenes are ordered with wait_for, not depends, so running one oracle task never
-# starts an export; `mise run all` runs them first.
+# starts an export; `mise run all` runs them first. The oracle tasks continue the client chain of export.toml; the
+# state oracle also runs Gradle in BlueMap/ (`:oracle:renderStates`), so it ends the BlueMap tree's chain and holds
+# its lock (build.toml). Timeouts: about 3x a cold container run (every reference captured) where measured
+# (2026-11-03, 32 CPUs, llvmpipe, world oracle with its default 8 judge processes): oracle:default 177 s client capture
+# + 291 s hot run, oracle:modernity 249 s + 266 s. oracle:addons and the state oracles are not measured yet: generous
+# upper bounds.
+# CPU priority: every oracle task runs with `nice -n 10` (BMGTNH_TASK_NICE, pipeline/steps.py shell), and so does e2e
+# (e2e.toml): once e2e, the demo and the oracle chain run side by side, the demo and the site are the critical path of
+# `mise run all`, and the world oracle's judge processes otherwise took most of the CPU the demo's gallery needs.
+# Measured 2026-11-04, every reference cached, e2e, demo, site and the five oracle tasks forced together (32 CPUs):
+# 1335 s with only e2e niced, 1277 s like this (demo 1139 s -> 1052 s; the oracle chain still ended 61 s before the
+# site).
 
 ["oracle:default"]
-description = "World oracle, variant default (default client, BlueMap with the default export): vanilla-zoo, gtnh-zoo, gt-machines, gt-pipes, gt-ores, gt-multiblocks, mod-renderers -> out/oracle-2.9.0/default/worlds/"
+description = "World oracle, variant default (default client, BlueMap with the default export): vanilla-zoo, gtnh-zoo, gt-machines, gt-pipes, gt-ores, gt-multiblocks, mod-renderers, endgame -> out/oracle-2.9.0/default/worlds/"
 depends = ["build-fork"]
-wait_for = ["export:default", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:mod-renderers"]
+wait_for = ["export:default", "export:addons", "export:modernity", "oracle:states-default", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:mod-renderers", "scene:endgame"]
+timeout = "25m"
+env = { BMGTNH_TASK_NICE = "10" }
 run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/default/worlds/summary.json -- uv run --directory e2e e2e oracle world --variant default --all --no-build"
 sources = [
   "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
@@ -16,20 +29,24 @@ sources = [
   "gtnh-exporter/launcher/src/gtnh_client/cameras.py",
   "clients/gtnh-2.9.0/.minecraft/mods/**", "!clients/gtnh-2.9.0/.minecraft/mods/bluemap-gtnh-exporter*.jar",
   "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
-  "out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo/level.dat", "worlds-2.9.0/vanilla-zoo/**/*.mca",
-  "out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level.dat", "worlds-2.9.0/gtnh-zoo/**/*.mca",
-  "out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-machines/**/*.mca",
-  "out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gt-pipes/**/*.mca",
-  "out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-ores/**/*.mca",
-  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/**/*.mca",
-  "out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/mod-renderers/**/*.mca",
+  # region files by directory, not `**/*.mca` (mise walks every directory below a pattern's prefix; e2e.toml has why)
+  "out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo/level.dat", "worlds-2.9.0/vanilla-zoo/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level.dat", "worlds-2.9.0/gtnh-zoo/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-machines/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gt-pipes/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-ores/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/mod-renderers/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/endgame/dump.ndjson", "worlds-2.9.0/endgame/level.dat", "worlds-2.9.0/endgame/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
 ]
 outputs = ["out/oracle-2.9.0/default/worlds/summary.json"]
 
 ["oracle:modernity"]
-description = "World oracle, variant modernity (Modernity client, BlueMap with the default export and both Modernity packs): vanilla-zoo, gtnh-zoo, gt-machines, gt-pipes, gt-ores, gt-multiblocks, mod-renderers -> out/oracle-2.9.0/modernity/worlds/"
+description = "World oracle, variant modernity (Modernity client, BlueMap with the default export and both Modernity packs): vanilla-zoo, gtnh-zoo, gt-machines, gt-pipes, gt-ores, gt-multiblocks, mod-renderers, endgame -> out/oracle-2.9.0/modernity/worlds/"
 depends = ["build-fork"]
-wait_for = ["export:default", "export:modernity", "export:modernity-vanilla", "oracle:default", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:mod-renderers"]
+wait_for = ["export:default", "export:addons", "export:modernity", "export:modernity-vanilla", "oracle:states-default", "oracle:default", "scene:vanilla-zoo", "scene:gtnh-zoo", "scene:gt-machines", "scene:gt-pipes", "scene:gt-ores", "scene:gt-multiblocks", "scene:mod-renderers", "scene:endgame"]
+timeout = "30m"
+env = { BMGTNH_TASK_NICE = "10" }
 run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/modernity/worlds/summary.json -- uv run --directory e2e e2e oracle world --variant modernity --all --no-build"
 sources = [
   "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
@@ -43,20 +60,23 @@ sources = [
   "out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip",
   "out/modernity/modernity-*-modded-2.9.0.zip",
   "out/modernity/modernity-*-vanilla-1.13.zip",
-  "out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo/level.dat", "worlds-2.9.0/vanilla-zoo/**/*.mca",
-  "out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level.dat", "worlds-2.9.0/gtnh-zoo/**/*.mca",
-  "out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-machines/**/*.mca",
-  "out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gt-pipes/**/*.mca",
-  "out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-ores/**/*.mca",
-  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/**/*.mca",
-  "out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/mod-renderers/**/*.mca",
+  "out/scenes-2.9.0/vanilla-zoo/dump.ndjson", "worlds-2.9.0/vanilla-zoo/level.dat", "worlds-2.9.0/vanilla-zoo/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gtnh-zoo/dump.ndjson", "worlds-2.9.0/gtnh-zoo/level.dat", "worlds-2.9.0/gtnh-zoo/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-machines/dump.ndjson", "worlds-2.9.0/gt-machines/level.dat", "worlds-2.9.0/gt-machines/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-pipes/dump.ndjson", "worlds-2.9.0/gt-pipes/level.dat", "worlds-2.9.0/gt-pipes/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-ores/dump.ndjson", "worlds-2.9.0/gt-ores/level.dat", "worlds-2.9.0/gt-ores/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/gt-multiblocks/dump.ndjson", "worlds-2.9.0/gt-multiblocks/level.dat", "worlds-2.9.0/gt-multiblocks/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/mod-renderers/dump.ndjson", "worlds-2.9.0/mod-renderers/level.dat", "worlds-2.9.0/mod-renderers/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/endgame/dump.ndjson", "worlds-2.9.0/endgame/level.dat", "worlds-2.9.0/endgame/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
 ]
 outputs = ["out/oracle-2.9.0/modernity/worlds/summary.json"]
 
 ["oracle:addons"]
-description = "World oracle, variant addons (addon client, BlueMap with the addons export): addons-machines, addons-multiblocks -> out/oracle-2.9.0/addons/worlds/"
+description = "World oracle, variant addons (addon client, BlueMap with the addons export): addons-zoo, addons-machines, addons-multiblocks -> out/oracle-2.9.0/addons/worlds/"
 depends = ["build-fork"]
-wait_for = ["export:addons", "oracle:default", "scene:addons-machines", "scene:addons-multiblocks"]
+wait_for = ["export:default", "export:addons", "export:modernity", "oracle:states-default", "oracle:default", "oracle:modernity", "scene:addons-zoo", "scene:addons-machines", "scene:addons-multiblocks"]
+timeout = "2h"
+env = { BMGTNH_TASK_NICE = "10" }
 run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/addons/worlds/summary.json -- uv run --directory e2e e2e oracle world --variant addons --all --no-build"
 sources = [
   "BlueMap/implementations/cli/build/libs/cli-*-shadow.jar", "BlueMap/legacy/build/libs/legacy-*-addon.jar",
@@ -67,14 +87,21 @@ sources = [
   "downloads/addons/versions.json",
   "downloads/addons/*.jar",
   "out/exporter-addons-2.9.0/bluemap-gtnh-resources-2.9.0-addons.zip",
-  "out/scenes-2.9.0/addons-machines/dump.ndjson", "worlds-2.9.0/addons-machines/level.dat", "worlds-2.9.0/addons-machines/**/*.mca",
-  "out/scenes-2.9.0/addons-multiblocks/dump.ndjson", "worlds-2.9.0/addons-multiblocks/level.dat", "worlds-2.9.0/addons-multiblocks/**/*.mca",
+  "out/scenes-2.9.0/addons-zoo/dump.ndjson", "worlds-2.9.0/addons-zoo/level.dat", "worlds-2.9.0/addons-zoo/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/addons-machines/dump.ndjson", "worlds-2.9.0/addons-machines/level.dat", "worlds-2.9.0/addons-machines/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
+  "out/scenes-2.9.0/addons-multiblocks/dump.ndjson", "worlds-2.9.0/addons-multiblocks/level.dat", "worlds-2.9.0/addons-multiblocks/{region,DIM1/region,DIM64/region,DIM112/region}/*.mca",
 ]
 outputs = ["out/oracle-2.9.0/addons/worlds/summary.json"]
 
 ["oracle:states-default"]
 description = "Per-state oracle, variant default: every exported block state -> out/oracle-2.9.0/default/states/ (judged failures are results, not errors)"
-wait_for = ["export:default"]
+# before the world oracles: their calibration reads the vanilla classification it writes (states/vanilla.json)
+wait_for = [
+  "export:default", "export:addons", "export:modernity",
+  "build-fork", "build-servermod", "verify",
+]
+env = { BMGTNH_TASK_LOCKS = "gradle-BlueMap", BMGTNH_TASK_NICE = "10" }
+timeout = "3h"
 run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/default/states/report.json -- python3 pipeline/steps.py report out/oracle-2.9.0/default/states/report.json -- uv run --directory e2e e2e oracle states --variant default"
 sources = [
   "BlueMap/oracle/src/main/**", "BlueMap/oracle/build.gradle.kts",
@@ -88,7 +115,13 @@ outputs = ["out/oracle-2.9.0/default/states/report.json"]
 
 ["oracle:states-modernity"]
 description = "Per-state oracle, variant modernity: every exported block state -> out/oracle-2.9.0/modernity/states/ (judged failures are results, not errors)"
-wait_for = ["export:default", "export:modernity", "export:modernity-vanilla", "oracle:states-default"]
+wait_for = [
+  "export:default", "export:addons", "export:modernity", "export:modernity-vanilla", "oracle:default", "oracle:modernity",
+  "oracle:addons", "oracle:states-default",
+  "build-fork", "build-servermod", "verify",
+]
+env = { BMGTNH_TASK_LOCKS = "gradle-BlueMap", BMGTNH_TASK_NICE = "10" }
+timeout = "3h"
 run = "python3 pipeline/steps.py adopt out/oracle-2.9.0/modernity/states/report.json -- python3 pipeline/steps.py report out/oracle-2.9.0/modernity/states/report.json -- uv run --directory e2e e2e oracle states --variant modernity"
 sources = [
   "BlueMap/oracle/src/main/**", "BlueMap/oracle/build.gradle.kts",

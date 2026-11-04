@@ -24,11 +24,13 @@ belong to their authors; they are offered for non-commercial use only and are re
 ([takedown](https://github.com/Bluemap-GTNH-Unofficial/BlueMap-GTNH/issues/new?template=takedown.yml)). If your
 modlist differs, export your own pack.
 
-Rendering is checked against the **real GTNH client** (the e2e repository's oracle): on 2.9.0, 78.5% of 61,513 judged
-block states and 77.4% of 18,437 judged block faces in seven test scene worlds match the client within thresholds
+<!-- numbers:readme-oracle -->
+Rendering is checked against the **real GTNH client** (the e2e repository's oracle): on 2.9.0, 78.10% of 61,513 judged
+block states and 94.04% of 97,139 judged block faces in 8 test scene worlds match the client within thresholds
 calibrated on data; see [Status](site/status.md) for the numbers per scene and the known gaps. The optional
-[Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH) look is checked the same way (76.5% of judged states,
-78.6% of judged faces in five scenes).
+[Modernity-GTNH](https://github.com/ModernityGTNH/Modernity-GTNH) look is checked the same way (76.17% of judged states,
+93.93% of judged faces in 8 scenes).
+<!-- /numbers -->
 
 [Community addons](site/guide/addons.md) render too (GTNH 2.9.0): Twist Space Technology 0.8.0, Programmable Hatches
 0.2.1p2, GT: Not Leisure 0.2.7-rc2.1 (with GTNLLib 1.1.3), NH Utilities 1.7.0 and the Box++ community fork 2.2.0.0.
@@ -76,7 +78,7 @@ next to each other (`git clone --recursive https://github.com/Bluemap-GTNH-Unoff
 Every build and check of the workspace is a [mise](https://mise.jdx.dev/) task of the umbrella `mise.toml` (groups in
 `pipeline/tasks/`); each declares its inputs and outputs and is skipped while their content hashes match its last
 successful run. Prerequisites: mise (Java 25 and Zulu 8, see [workspace & toolchain](site/development/index.md)), uv
-and pnpm.
+and pnpm; the container in `.devcontainer/` provides them all (see [building](site/development/building.md)).
 
 ```sh
 mise tasks                 # every task with what it does
@@ -84,13 +86,15 @@ mise run all               # builds, unit suites, scenes, verify, exports, oracl
 mise run check             # only the unit suites and scene checks the current changes need
 mise run check --plan      # ... printed, not run
 mise run build-servermod   # one step (also build-fork, build-exporter, build-harness, test, e2e, oracle, ...)
+mise run docs:numbers      # the numbers the site and READMEs quote, from out/ into site/data/results-2.9.0.json
 mise run adopt             # once per existing workspace: record the outputs already there as current
 ```
 
 `check` maps each file changed against the upstream branches (plus uncommitted files) through
 `pipeline/affected.toml` to unit suites and scenes, and runs the affected scenes' BlueMap-side oracle (cached client
-references, no client) and e2e views. Tasks run one at a time, because exports and oracle captures start a GTNH
-client and scenes a GTNH server. The three GTNHGradle mods share one Gradle user home and its local build cache:
+references, no client) and e2e views. Independent tasks run side by side; one Gradle build per source tree, one scene
+per GTNH server and one set of GTNH clients run at a time (wait_for chains and locks), and `mise run timings` shows
+the last run's critical path. The three GTNHGradle mods share one Gradle user home and its local build cache:
 Minecraft is decompiled once per machine, and a clean mod build takes its recompiled Minecraft and compiled modules
 from the cache. Details: [Building](site/development/building.md#pipeline).
 

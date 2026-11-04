@@ -1,11 +1,16 @@
-# Resource pack exports. Each one starts a GTNH client (one at a time on this machine; the workspace runs tasks with
-# jobs = 1). Sources: the exporter's code without its oracle capture package (which never affects a pack), the
-# launcher, the client's mod jars (minus a leftover exporter jar) and the scene dumps whose states are added to the
-# export. The exporter jar comes from build-exporter, passed with --mod-jar so the launcher does not run Gradle again.
+# Resource pack exports. Each one starts a GTNH client, and one set of clients runs at a time (on the Windows host when
+# BMGTNH_CLIENT_HOST forwards the launcher's client commands to `gtnh-client serve` there, as the dev container does):
+# the launcher holds WS/locks/client.lock where the clients run, and within a run the client tasks are chained with
+# `wait_for` in this order: export:default, export:addons, export:modernity, oracle:default, oracle:modernity,
+# oracle:addons, oracle:states-default, oracle:states-modernity. Sources: the exporter's code without its oracle capture
+# package (which never affects a pack), the launcher, the client's mod jars (minus a leftover exporter jar) and the scene
+# dumps whose states are added to the export. The exporter jar comes from build-exporter, passed with --mod-jar so
+# the launcher does not run Gradle again. Timeouts are generous upper bounds, not yet 3x a measured container run.
 
 ["export:default"]
 description = "Default pack -> out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip (client clients/gtnh-2.9.0, extra states of the gtnh-zoo dump)"
 wait_for = ["scene:gtnh-zoo"]
+timeout = "90m"
 run = [
   { task = "build-exporter" },
   '''
@@ -29,6 +34,7 @@ outputs = ["out/exporter-2.9.0/bluemap-gtnh-resources-2.9.0.zip", "out/exporter-
 ["export:addons"]
 description = "Addon pack -> out/exporter-addons-2.9.0/bluemap-gtnh-resources-2.9.0-addons.zip (client clients/gtnh-addons-2.9.0 + the addon jars of downloads/addons/versions.json)"
 wait_for = ["scene:gtnh-zoo", "scene:addons-zoo", "export:default"]
+timeout = "90m"
 run = [
   { task = "build-exporter" },
   '''
@@ -57,6 +63,7 @@ outputs = ["out/exporter-addons-2.9.0/bluemap-gtnh-resources-2.9.0-addons.zip", 
 ["export:modernity-vanilla"]
 description = "Modernity-GTNH vanilla textures converted to 1.13 names -> out/modernity/modernity-<release>-vanilla-1.13.zip (no client)"
 run = "python3 pipeline/steps.py adopt 'out/modernity/modernity-*-vanilla-1.13.zip' -- uv run --directory modernity modernity vanilla"
+timeout = "10m"
 sources = [
   "modernity/src/**", "!modernity/src/**/__pycache__/**", "modernity/data/**", "modernity/pyproject.toml",
   "downloads/modernity/release.json", "downloads/modernity/Modernity-*.zip",
@@ -66,6 +73,7 @@ outputs = ["out/modernity/modernity-*-vanilla-1.13.zip"]
 ["export:modernity"]
 description = "Modernity-GTNH modded pack -> out/modernity/modernity-<release>-modded-2.9.0.zip (default client with the Modernity zip and MyCTMLib for the run)"
 wait_for = ["scene:gtnh-zoo", "export:default", "export:addons"]
+timeout = "90m"
 run = [
   { task = "build-exporter" },
   '''

@@ -25,7 +25,9 @@ mise install java@temurin-25.0.5+8.0.LTS java@zulu-8.98.0.107
 ```
 
 - **Java** comes from [mise](https://mise.jdx.dev/). Java 25 builds and runs everything; the GTNHGradle mod builds
-  (server mod, exporter, harness) also need a Java 8 toolchain: Zulu, the only Java 8 build for macOS arm64.
+  (server mod, exporter, harness) also need a Java 8 toolchain: Zulu, the only Java 8 build for macOS arm64, also
+  available for Linux x64 and used on both. The [container](/development/building#container) provides the whole
+  toolchain on Linux x64.
   `BlueMap/mise.toml` pins `temurin-25.0.5+8.0.LTS` for the main BlueMap build.
 - **Python tools** (`gtnh-exporter/launcher`, `modernity`, `orchestrator`, `e2e`) use [uv](https://docs.astral.sh/uv/)
   and Python 3.12 or newer. Run them with `uv run` inside their folder.

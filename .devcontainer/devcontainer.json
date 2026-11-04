@@ -1,0 +1,31 @@
+// VS Code Dev Containers (Docker path: `wslc` on Windows, or Docker anywhere). The checkout is bind-mounted at /ws;
+// what only the container uses (servers, baselines, the BlueMap side of the oracle and e2e, Node modules, tool caches)
+// lives in named volumes, the same ones .devcontainer/run.sh uses (keep both lists in sync). clients/, downloads/,
+// worlds-2.9.0/ and the rest of out/ stay on the bind mount: the GTNH clients run on the Windows host and use them.
+{
+  "name": "BlueMap GTNH",
+  "build": { "dockerfile": "Dockerfile" },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/ws,type=bind",
+  "workspaceFolder": "/ws",
+  "mounts": [
+    "source=bmgtnh-servers,target=/ws/servers,type=volume",
+    "source=bmgtnh-baselines,target=/ws/baselines-2.9.0,type=volume",
+    "source=bmgtnh-locks,target=/ws/locks,type=volume",
+    "source=bmgtnh-sources,target=/ws/sources,type=volume",
+    "source=bmgtnh-oracle,target=/ws/out/oracle-2.9.0,type=volume",
+    "source=bmgtnh-e2e-out,target=/ws/out/e2e-2.9.0,type=volume",
+    "source=bmgtnh-e2e-cache,target=/ws/out/e2e,type=volume",
+    "source=bmgtnh-site-modules,target=/ws/site/node_modules,type=volume",
+    // Node.js and node_modules of the BlueMap webapp: Gradle re-reads them on every BlueMap build (see run.sh)
+    "source=bmgtnh-webapp-modules,target=/ws/BlueMap/common/webapp/node_modules,type=volume",
+    "source=bmgtnh-webapp-node,target=/ws/BlueMap/common/.gradle,type=volume",
+    "source=bmgtnh-gradle,target=/root/.gradle,type=volume",
+    "source=bmgtnh-cache,target=/root/.cache,type=volume",
+    "source=bmgtnh-state,target=/root/.local/state,type=volume"
+  ],
+  "runArgs": ["--shm-size=2g"],
+  // GTNH clients run on the Windows host: start `gtnh-client serve` there (gtnh-exporter/launcher/README.md)
+  "containerEnv": { "BMGTNH_CLIENT_HOST": "http://host.wslc.internal:8390" },
+  // BlueMap web servers of the servers (8100-8112), e2e and oracle web servers (8200-8215), site preview (4173)
+  "forwardPorts": [8109, 8112, 4173]
+}

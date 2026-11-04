@@ -7,6 +7,7 @@ import DemoGallery from "./components/DemoGallery.vue";
 import DemoMap from "./components/DemoMap.vue";
 import DisclaimerBanner from "./components/DisclaimerBanner.vue";
 import DisclaimerNote from "./components/DisclaimerNote.vue";
+import ResultsTable from "./components/ResultsTable.vue";
 import "./custom.css";
 
 export default {
@@ -22,5 +23,6 @@ export default {
     app.component("DemoEndgame", DemoEndgame);
     app.component("DemoCompare", DemoCompare);
     app.component("DemoGallery", DemoGallery);
+    app.component("ResultsTable", ResultsTable);
   },
 } satisfies Theme;

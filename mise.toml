@@ -3,7 +3,10 @@
 #   mise run all      everything: builds, unit suites, scenes, verify, exports, oracle, e2e, demo, site
 #   mise run plan     what `mise run all` (or `mise run plan <task>...`) would run, without running or recording it
 #   mise run check    only the unit suites and scene checks the current changes need (pipeline/affected.toml)
+#   mise run timings  wall clock of the last `mise run`: each task, slowest first, and the critical path
 #   mise run adopt    once per workspace: record the outputs already here as current (see pipeline/steps.py)
+#
+# Several tasks: `mise run build ::: test` (`mise run build test` passes `test` to `build` as an argument).
 #
 # A task with `sources` and `outputs` is skipped while both hash the same as after its last successful run (content
 # hashes, not modification times, so a fresh checkout or a touched file does not rerun anything). The task groups live
@@ -13,9 +16,11 @@ min_version = "2026.10.4"
 
 [settings]
 task.source_freshness_hash_contents = true
-# One task at a time: exports and oracle captures start a GTNH client, scenes a GTNH server on fixed ports, and only
-# one of each may run on this machine.
-jobs = 1
+# Independent tasks run side by side. What may not run twice at once is serialized: within one run by `wait_for`
+# chains (one Gradle build per source tree, one scene per server, one client task at a time), across runs by locks in
+# WS/locks/ (tasks' BMGTNH_TASK_LOCKS for Gradle trees, the orchestrator's server locks, the launcher's client lock).
+jobs = 8
+task.timings = true
 
 [env]
 BMGTNH_WORKSPACE = "{{config_root}}"
@@ -23,26 +28,39 @@ BMGTNH_PACK_VERSION = "2.9.0"
 
 [task_config]
 includes = ["pipeline/tasks/*.toml"]
+# Every task command runs through pipeline/steps.py shell: bash with errexit and pipefail, the task's locks, and a
+# line in out/pipeline/timings.ndjson (`mise run timings`).
+shell = "python3 pipeline/steps.py shell"
 
 [tasks.doctor]
 description = "Quick checks, run every time: tools, workspace inputs, Gradle cache settings, repository state"
 run = "python3 pipeline/steps.py doctor"
+timeout = "2m"
 
 [tasks.plan]
-description = "The tasks `mise run all` (or `mise run plan TASK...`) would run, on a copy of mise's state; never use `mise run -n` itself here (mise 2026.10.21 records a dry run as a successful run in content-hash mode)"
+description = "The tasks `mise run all` (or `mise run plan TASK...`) would run, on a copy of mise's state; never use `mise run -n` itself here (mise 2026.10.21 recorded a dry run as a successful run in content-hash mode; 2026.10.25 no longer does)"
 run = "python3 pipeline/steps.py plan"
 raw = true
+timeout = "10m"
 
 [tasks.check]
 description = "Changed-path checks: unit suites, BlueMap-side world oracle and e2e views of the affected scenes (--plan: print only)"
 run = "python3 pipeline/check.py"
 raw = true
+timeout = "4h"
+
+[tasks.timings]
+description = "Wall clock of the last recorded `mise run` (`--runs N`, `--all`): each task slowest first, lock waits, critical path"
+run = "python3 pipeline/steps.py timings"
+env = { BMGTNH_TIMINGS = "0" }
+timeout = "1m"
 
 [tasks.all]
 description = "The whole pipeline; on an unchanged tree everything but `doctor` is skipped"
-depends = ["doctor", "build", "test", "scenes", "verify", "export", "oracle", "e2e", "demo", "site"]
+depends = ["doctor", "build", "test", "scenes", "verify", "export", "oracle", "e2e", "demo", "docs:numbers", "site"]
 
 [tasks.adopt]
 description = "Record the existing outputs of the expensive tasks (exports, scenes, oracle, e2e, demo) as current without producing them again; builds, tests, verify and site run normally"
 run = "BMGTNH_ADOPT=1 mise run --continue-on-error all"
 raw = true
+timeout = "12h"

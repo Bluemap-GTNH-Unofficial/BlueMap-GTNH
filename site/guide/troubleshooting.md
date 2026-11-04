@@ -1,5 +1,9 @@
 # Troubleshooting
 
+<script setup>
+import { data as n } from "../data/results.data.ts";
+</script>
+
 Problems we ran into, and what fixed them. Remember that this port is [unofficial](/status): do not report its
 problems to BlueMap or the GTNH team.
 
@@ -21,8 +25,9 @@ That is BlueMap's missing-texture cube. Either the exported pack is missing, or 
   affected area.
 - If your modlist is neither plain 2.9.0 nor 2.9.0 with the five supported addons, export from a client with the same
   pack version and the same addons as the server.
-- 1,476 of the 61,468 block states of 2.9.0 cannot be exported at all; unless a dedicated renderer draws them, they
-  always show as missing-texture cubes. `export-report.json` lists them; see [known gaps](/status#known-gaps).
+- {{ n.exports.default.failed }} of the {{ n.exports.default.states }} block states of 2.9.0 cannot be exported at
+  all; unless a dedicated renderer draws them, they always show as missing-texture cubes. `export-report.json` lists
+  them; see [known gaps](/status#known-gaps).
 
 ## Vanilla blocks have no textures
 

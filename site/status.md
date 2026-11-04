@@ -1,3 +1,7 @@
+<script setup>
+import { data as n } from "./data/results.data.ts";
+</script>
+
 # Status
 
 This page describes the current source, which the next release, **`v5.29-gtnh.2`** (BlueMap 5.29 plus the port),
@@ -19,9 +23,10 @@ machine.
 - **Vanilla blocks.** 1.7.10 IDs and metadata are flattened to 1.13 block states, including shapes that depend on
   neighbours (stairs, fences, panes, redstone, doors and so on). Compared with a real Minecraft 1.13.2 world upgrade
   over 905,216 positions; every remaining difference is a deliberate choice to keep the 1.7 look.
-- **Modded blocks.** The client exporter captures the appearance of every block state the pack registers (4,087
-  blocks, 61,468 states from 138 mods, in 51 s). On the `gtnh-zoo` test scene, 14,887 of 16,266 placed modded states
-  (91.52%) render with their own model (simple bounding-box fallbacks counted).
+- **Modded blocks.** The client exporter captures the appearance of every block state the pack registers
+  ({{ n.exports.default.blocks }} blocks, {{ n.exports.default.states }} states from {{ n.exports.default.mods }} mods,
+  in 51 s). On the `gtnh-zoo` test scene, 14,887 of 16,266 placed modded states (91.52%) render with their own model
+  (simple bounding-box fallbacks counted).
 - **Dedicated renderers** for GregTech machines, pipes, cables, ores and frames; connected textures (Chisel, MyCTMLib
   and GregTech's MCPatcher glass, with hatches joining their casings); Iron Chests; BiblioCraft (partial); Applied
   Energistics 2 cables, parts and facades; EnderIO conduits.
@@ -43,10 +48,10 @@ machine.
 
 | | Result |
 |---|---|
-| Machines exported | 3,412 of 3,412 MTEs on the base pack (4,450 of 4,450 with the addons), 498 casings, 0 failures |
-| GregTech blocks in the test scenes | 8,066 `gt.blockmachines` in `gt-machines`, `gt-pipes` and `gt-multiblocks`, 3,904 ores in `gt-ores`; the reader matches the server on all of them |
-| Multiblocks in the `gt-multiblocks` scene | 19 controllers, 18 formed (GregTech cannot check the bricked blast furnace) |
-| State oracle, `gregtech` states | 3,839 of 6,157 judged states match the client (62.4%) |
+| Machines exported | {{ n.exports.default.mteOk }} of {{ n.exports.default.mte }} MTEs on the base pack ({{ n.exports.addons.mteOk }} of {{ n.exports.addons.mte }} with the addons), {{ n.exports.default.casings }} casings, {{ n.exports.default.mteFailed }} failures |
+| GregTech blocks in the test scenes | {{ n.scenes.gtMachines }} `gt.blockmachines` in `gt-machines`, `gt-pipes` and `gt-multiblocks`, {{ n.scenes.gtOres }} ores in `gt-ores`; the reader matches the server on all of them |
+| Multiblocks in the `gt-multiblocks` scene | {{ n.scenes.multiblocks }} controllers, {{ n.scenes.multiblocksFormed }} formed (GregTech cannot check the bricked blast furnace) |
+| State oracle, `gregtech` states | {{ n.states.gregtech.passed }} of {{ n.states.gregtech.judged }} judged states match the client ({{ n.states.gregtech.rate }}) |
 
 ## Real-client oracle
 
@@ -55,55 +60,49 @@ alone (`e2e oracle states`), and every visible block face of the test scene worl
 (`e2e oracle world`). The pass thresholds are calibrated on vanilla blocks that look the same in 1.7.10 and 1.13, not
 tuned by hand.
 
-**Block states.** 62,659 states (1,191 vanilla states and the 61,468 the exporter captured):
+**Block states.** {{ n.states.default.states }} states ({{ n.states.vanilla }} vanilla states and the
+{{ n.exports.default.states }} the exporter captured):
 
-| Look | Judged | Pass | Pass rate | Accepted (1.13) | Client draws nothing | Client throws |
-|---|---|---|---|---|---|---|
-| default | 61,513 | 48,266 | **78.5%** | 120 | 789 | 237 |
-| Modernity-GTNH | 61,582 | 47,138 | **76.5%** | 52 | 788 | 237 |
+<ResultsTable name="oracle-states" />
 
-**Scene worlds.** Faces passing per scene, in views whose client and BlueMap renderings line up (every view did).
-Faces of accepted 1.13 differences are counted apart and not included:
+**Scene worlds.** Faces passing per scene, in views whose client and BlueMap renderings line up (default:
+{{ n.worlds.default.total.viewsAligned }} of {{ n.worlds.default.total.views }} views, Modernity-GTNH:
+{{ n.worlds.modernity.total.viewsAligned }} of {{ n.worlds.modernity.total.views }}). Faces of accepted 1.13
+differences are counted apart and not included:
 
-| Scene | default | Modernity-GTNH |
-|---|---|---|
-| `vanilla-zoo` | 1,991 of 2,221 (89.6%) | 2,281 of 2,578 (88.5%) |
-| `gtnh-zoo` | 2,387 of 3,380 (70.6%) | 2,378 of 3,380 (70.4%) |
-| `gt-machines` | 2,968 of 3,299 (90.0%) | 2,865 of 3,299 (86.8%) |
-| `gt-pipes` | 3,043 of 3,486 (87.3%) | not run |
-| `gt-ores` | 1,439 of 2,632 (54.7%) | not run |
-| `gt-multiblocks` | 398 of 411 (96.8%) | 400 of 421 (95.0%) |
-| `mod-renderers` | 2,041 of 3,008 (67.9%) | 2,052 of 3,011 (68.2%) |
-| all of the above | 14,267 of 18,437 (77.4%) | 9,976 of 12,689 (78.6%) |
+<ResultsTable name="oracle-worlds" />
 
-With the community addons (`addons` look): `addons-machines` 3,423 of 3,690 faces (92.8%), `addons-multiblocks`
-7,792 of 7,982 (97.6%). `gtnh-initial-rwg`, a freshly generated world, has no dump, so the world oracle cannot judge
-it. The world thresholds, calibrated on `vanilla-zoo`: IoU at least 1.0, ΔE at most 2.337, SSIM at least 0.9323, on
-faces of at least 64 pixels.
+With the community addons (`addons` look):
+
+<ResultsTable name="oracle-worlds-addons" />
+
+`gtnh-initial-rwg`, a freshly generated world, has no dump, so the world oracle cannot judge it. The world
+thresholds, calibrated on `{{ n.worlds.calibration.scene }}`: IoU at least {{ n.worlds.calibration.thresholds.iou }},
+ΔE at most {{ n.worlds.calibration.thresholds.deltaE }}, SSIM at least {{ n.worlds.calibration.thresholds.ssim }}, on
+faces of at least {{ n.worlds.calibration.thresholds.minPixels }} pixels.
 
 **How far to trust it.** The swap tests judge renders that are known to differ from the reference: the default
 client's renders against the Modernity client's, and BlueMap with one look against the client with the other.
 
-| | Detection (known-different flagged) | False failures |
-|---|---|---|
-| State oracle | 27,744 of 27,748 differing states (99.99%) | 6 of 233 calibration states for colour (2.6%), 12 of 261 for geometry (4.6%) |
-| World oracle | 5,222 of 6,549 differing faces (79.7%): 2,051 of 2,074 (98.9%) where the two clients' captures of the face differ by a mean of 20 or more RGB levels, 2 of 167 where they differ by 1–2 | 2 of 3,220 faces the two clients draw alike (0.06%); on `vanilla-zoo` 3 of 137 calibration states for colour and 3 of 143 for geometry (2.2%, 7 faces each) |
+<ResultsTable name="oracle-trust" />
 
 A failing state or face is therefore almost always a real difference, while a passing face can still hide a small
 colour difference that the world thresholds do not resolve.
 
 ## Known gaps
 
-- About a fifth of the judged block states and of the judged scene faces still differ from the client beyond the
-  thresholds; the oracle reports list them per mod with client, BlueMap and difference images. The weakest scenes are
-  `gt-ores` (54.7% of faces pass; its client captures never fully settled, so this number is less certain) and
-  `mod-renderers` (67.9%).
+- {{ n.states.default.failRate }} of the judged block states and {{ n.worlds.default.total.failRate }} of the judged
+  scene faces still differ from the client beyond the thresholds; the oracle reports list them per mod with client,
+  BlueMap and difference images. The weakest scenes are `gt-ores` ({{ n.worlds.default.scenes["gt-ores"].rate }} of
+  faces pass; its client captures never fully settled, so this number is less certain) and `mod-renderers`
+  ({{ n.worlds.default.scenes["mod-renderers"].rate }}).
 - BiblioCraft furniture is mostly drawn as boxes (65 of 285 states have a dedicated renderer).
 - Applied Energistics 2 and EnderIO render without some details (AE2 cable textures do not follow their direction, no
   smart-cable channel lights; EnderIO without facade connection plates and input/output markers).
 - GregTech covers, machines with special (TESR) renderers and pipes inside frame boxes are not drawn.
-- 1,476 of the 61,468 exported states have no usable model (920 of them because the mod returns the client's
-  placeholder icon); they show as missing-texture cubes unless a dedicated renderer draws them.
+- {{ n.exports.default.failed }} of the {{ n.exports.default.states }} exported states have no usable model
+  ({{ n.exports.default.errorIcon }} of them because the mod returns the client's placeholder icon); they show as
+  missing-texture cubes unless a dedicated renderer draws them.
 - Animated effects are drawn frozen; beams are opaque.
 - Exporting needs a desktop session; a headless Docker export is not available yet.
 - Tested on GTNH 2.9.0 only; other pack versions are untested.
@@ -118,7 +117,7 @@ What the tests prove, and what they do not:
 | Vanilla flattening oracle | the reader's 1.13 block states vs the same world upgraded by Minecraft 1.13.2 itself | vanilla flattening matches Mojang's own upgrade, apart from listed deliberate differences |
 | Exporter coverage | rendered modded states vs placed modded states in `gtnh-zoo` | 91.52% have their own model; the rest are listed by reason |
 | [Real-client oracle](/development/oracle) | BlueMap vs the real GTNH client, per block state and per visible block face of the scene worlds | how closely the map matches the game, within thresholds calibrated on data; see [above](#real-client-oracle) |
-| Browser e2e (50 views, 8 scenes) | screenshots of rendered maps vs **locally approved screenshots of earlier renders** | renders did not change since a human approved them by eye |
+| Browser e2e ({{ n.e2e.views }} views, {{ n.e2e.scenes }} scenes) | screenshots of rendered maps vs **locally approved screenshots of earlier renders** | renders did not change since a human approved them by eye |
 
 > [!IMPORTANT] The e2e baselines are a regression check, not a proof of correctness
 > The browser checks compare BlueMap with BlueMap: a check passes when a render looks like the render that was
@@ -133,8 +132,8 @@ supported pack version. The exported resource pack must come from a 2.9.0 client
 base pack (`bluemap-gtnh-resources-2.9.0.zip`, plain 2.9.0) or addon pack (`bluemap-gtnh-resources-2.9.0-addons.zip`,
 with the five supported addons). Things that matter for the map:
 
-- GT 5.09.54.265 adds MCPatcher connected textures for three DTPF casings; the exporter records them (98
-  connected-texture entries).
+- GT 5.09.54.265 adds MCPatcher connected textures for three DTPF casings; the exporter records them
+  ({{ n.exports.default.ctmTextures }} connected-texture entries).
 - Postea migrates IC2 metal blocks and basic machine casings to their GregTech equivalents and Village Names concrete
   to Et Futurum concrete when old chunks load; the reader reads either.
 - Even with structure generation off, 2.9.0 places Village Names villages, Pam's gardens and Thaumcraft aura nodes.
